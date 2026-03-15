@@ -1,3 +1,7 @@
+import { ToolSelector } from './ToolSelector'
+import { ActiveTileDisplay } from './ActiveTileDisplay'
+import { TilePalette } from './TilePalette'
+
 export function Toolbar() {
   return (
     <div
@@ -10,24 +14,13 @@ export function Toolbar() {
       }}
     >
       <ToolbarSection title="Tools">
-        <div className="text-xs" style={{ color: 'var(--text-dim)' }}>
-          Paint / Erase / Pick
-        </div>
+        <ToolSelector />
       </ToolbarSection>
       <ToolbarSection title="Active Tile">
-        <div className="text-xs" style={{ color: 'var(--text-dim)' }}>
-          No tile selected
-        </div>
+        <ActiveTileDisplay />
       </ToolbarSection>
-      <ToolbarSection title="Colors">
-        <div className="text-xs" style={{ color: 'var(--text-dim)' }}>
-          FG / BG color swatches
-        </div>
-      </ToolbarSection>
-      <ToolbarSection title="Tile Palette">
-        <div className="text-xs" style={{ color: 'var(--text-dim)' }}>
-          Load a registry to see tiles
-        </div>
+      <ToolbarSection title="Tile Palette" noBorder>
+        <TilePalette />
       </ToolbarSection>
     </div>
   )
@@ -36,14 +29,16 @@ export function Toolbar() {
 function ToolbarSection({
   title,
   children,
+  noBorder,
 }: {
   title: string
   children: React.ReactNode
+  noBorder?: boolean
 }) {
   return (
     <div
       className="p-3"
-      style={{ borderBottom: '1px solid var(--border)' }}
+      style={{ borderBottom: noBorder ? 'none' : '1px solid var(--border)' }}
     >
       <div
         className="font-mono text-[10px] font-semibold uppercase tracking-[1.5px] mb-2.5"

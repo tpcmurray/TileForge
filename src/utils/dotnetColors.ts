@@ -1,4 +1,4 @@
-import { RGBA } from '../types/index'
+import type { RGBA } from '../types/index'
 
 const dotnetColors: Record<string, RGBA> = {
   aliceblue: { r: 240, g: 248, b: 255, a: 255 },
