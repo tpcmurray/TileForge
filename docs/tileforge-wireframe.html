@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TileForge — Wireframe</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+  :root {
+    --bg-darkest: #0d0f12;
+    --bg-dark: #141720;
+    --bg-panel: #1a1e2a;
+    --bg-surface: #222738;
+    --bg-hover: #2a3048;
+    --bg-active: #333a55;
+    --border: #2e3450;
+    --border-light: #3a4268;
+    --text: #c8cdd8;
+    --text-dim: #6b7394;
+    --text-bright: #e8ecf4;
+    --accent: #4a9eff;
+    --accent-dim: #2a5a99;
+    --accent-glow: rgba(74, 158, 255, 0.15);
+    --green: #3ddc84;
+    --red: #ff5555;
+    --orange: #ffaa33;
+    --toolbar-width: 260px;
+    --statusbar-height: 32px;
+    --menubar-height: 36px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg-darkest);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  /* ── MENU BAR ── */
+  .menubar {
+    height: var(--menubar-height);
+    background: var(--bg-dark);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 2px;
+  }
+  .menubar-logo {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--accent);
+    margin-right: 16px;
+    letter-spacing: 1px;
+  }
+  .menubar-logo span { color: var(--text-dim); font-weight: 400; }
+  .menu-item {
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--text-dim);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .menu-item:hover { background: var(--bg-hover); color: var(--text); }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    display: flex;
+    height: calc(100vh - var(--menubar-height) - var(--statusbar-height));
+  }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    width: var(--toolbar-width);
+    min-width: var(--toolbar-width);
+    background: var(--bg-panel);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .toolbar::-webkit-scrollbar { width: 5px; }
+  .toolbar::-webkit-scrollbar-track { background: transparent; }
+  .toolbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .tb-section {
+    border-bottom: 1px solid var(--border);
+    padding: 12px;
+  }
+  .tb-section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+
+  /* Colors section */
+  .color-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .color-row:hover { background: var(--bg-hover); }
+  .color-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    border: 2px solid var(--border-light);
+    position: relative;
+    flex-shrink: 0;
+  }
+  .color-swatch.transparent-bg {
+    background: repeating-conic-gradient(#444 0% 25%, #666 0% 50%) 50% / 12px 12px;
+  }
+  .color-label { font-size: 12px; color: var(--text-dim); }
+  .color-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+  }
+
+  /* Glyph preview */
+  .glyph-preview-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 8px;
+    background: var(--bg-surface);
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    transition: border-color 0.15s;
+  }
+  .glyph-preview-box:hover { border-color: var(--accent); }
+  .glyph-big {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-family: 'JetBrains Mono', monospace;
+    border-radius: 4px;
+  }
+  .glyph-info { font-size: 11px; line-height: 1.6; }
+  .glyph-info strong { color: var(--text-bright); font-weight: 600; }
+
+  /* Tools */
+  .tool-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 4px;
+  }
+  .tool-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 4px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-dim);
+  }
+  .tool-btn:hover { background: var(--bg-hover); color: var(--text); border-color: var(--border-light); }
+  .tool-btn.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+  .tool-icon { font-size: 18px; }
+  .tool-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Tile palette */
+  .palette-search {
+    width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 11px;
+    color: var(--text);
+    outline: none;
+    margin-bottom: 8px;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .palette-search::placeholder { color: var(--text-dim); }
+  .palette-search:focus { border-color: var(--accent); }
+
+  .palette-category {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 0 4px;
+  }
+  .palette-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
+    margin-bottom: 6px;
+  }
+  .palette-tile {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.12s;
+    position: relative;
+  }
+  .palette-tile:hover { border-color: var(--border-light); transform: scale(1.05); }
+  .palette-tile.selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .palette-tile .tile-glyph {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .palette-tile .tile-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+
+  .palette-add {
+    width: 100%;
+    padding: 6px;
+    background: transparent;
+    border: 1px dashed var(--border-light);
+    border-radius: 4px;
+    color: var(--text-dim);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 6px;
+  }
+  .palette-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── CANVAS AREA ── */
+  .canvas-area {
+    flex: 1;
+    background: var(--bg-darkest);
+    position: relative;
+    overflow: hidden;
+  }
+  .canvas-grid {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .canvas-grid table {
+    border-collapse: collapse;
+    border: 1px solid #2a2e3a;
+  }
+  .canvas-grid td {
+    width: 28px;
+    height: 28px;
+    text-align: center;
+    vertical-align: middle;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    border: 1px solid rgba(46, 52, 80, 0.3);
+    line-height: 1;
+    cursor: crosshair;
+    transition: outline 0.1s;
+  }
+  .canvas-grid td:hover {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+    z-index: 1;
+    position: relative;
+  }
+  .canvas-grid td.selected-cell {
+    outline: 2px dashed var(--orange);
+    outline-offset: -2px;
+    z-index: 2;
+    position: relative;
+  }
+
+  /* Canvas zoom indicator */
+  .zoom-indicator {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg-panel);
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  /* Canvas coordinates tooltip */
+  .coord-tooltip {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    background: var(--bg-panel);
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    display: none;
+  }
+
+  /* ── STATUS BAR ── */
+  .statusbar {
+    height: var(--statusbar-height);
+    background: var(--bg-dark);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    gap: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+  .status-item { color: var(--text-dim); }
+  .status-item strong { color: var(--text); font-weight: 500; }
+  .status-sep { width: 1px; height: 16px; background: var(--border); }
+
+  /* ── MODAL OVERLAY ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.5);
+    max-height: 85vh;
+    overflow: auto;
+  }
+  .modal-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-bright);
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .modal-close:hover { color: var(--text); background: var(--bg-hover); }
+  .modal-body { padding: 16px 20px; }
+  .modal-footer {
+    padding: 12px 20px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  /* ── CP437 DIALOG ── */
+  .cp437-grid {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 2px;
+  }
+  .cp437-cell {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 16px;
+    color: var(--text);
+    background: var(--bg-surface);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.1s;
+    border: 1px solid transparent;
+  }
+  .cp437-cell:hover {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    transform: scale(1.15);
+    z-index: 1;
+  }
+  .cp437-cell.picked {
+    background: var(--accent);
+    color: #fff;
+  }
+  .cp437-footer-info {
+    margin-top: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: center;
+    min-height: 20px;
+  }
+
+  /* ── TILE EDITOR DIALOG ── */
+  .tile-editor { width: 500px; }
+  .te-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .te-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-dim);
+    width: 90px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .te-input {
+    flex: 1;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 6px 10px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'IBM Plex Sans', sans-serif;
+    outline: none;
+  }
+  .te-input:focus { border-color: var(--accent); }
+  .te-input.mono {
+    font-family: 'JetBrains Mono', monospace;
+    width: 60px;
+    flex: none;
+    text-align: center;
+  }
+  .te-color-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 4px;
+    border: 2px solid var(--border-light);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .te-glyph-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text);
+    transition: border-color 0.15s;
+  }
+  .te-glyph-btn:hover { border-color: var(--accent); }
+  .te-checkbox-row {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .te-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .te-checkbox input {
+    accent-color: var(--accent);
+    width: 14px;
+    height: 14px;
+  }
+  .te-preview {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 48px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin: 0 auto 12px;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 6px 16px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg-surface);
+    color: var(--text);
+    transition: all 0.15s;
+    font-family: 'IBM Plex Sans', sans-serif;
+  }
+  .btn:hover { background: var(--bg-hover); border-color: var(--border-light); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #3a8aee; }
+
+  /* Context menu wireframe */
+  .context-menu {
+    position: absolute;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-light);
+    border-radius: 6px;
+    padding: 4px;
+    min-width: 140px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    z-index: 50;
+    display: none;
+  }
+  .context-menu.open { display: block; }
+  .ctx-item {
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+  }
+  .ctx-item:hover { background: var(--bg-hover); }
+  .ctx-item .shortcut { color: var(--text-dim); font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+  .ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+  /* Interaction hint banners */
+  .hint-banner {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg-panel);
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    pointer-events: none;
+    opacity: 0.7;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════ MENU BAR ════════════ -->
+<div class="menubar">
+  <div class="menubar-logo">TILEFORGE <span>v0.1</span></div>
+  <div class="menu-item" onclick="alert('File menu: New Map, Open Map, Save Map, Open Registry, Save Registry, Import C# Registry')">File</div>
+  <div class="menu-item">Edit</div>
+  <div class="menu-item">View</div>
+  <div class="menu-item" onclick="alert('Help: Keyboard shortcuts, About')">Help</div>
+</div>
+
+<!-- ════════════ MAIN LAYOUT ════════════ -->
+<div class="main">
+
+  <!-- ──── TOOLBAR ──── -->
+  <div class="toolbar">
+
+    <!-- Tools -->
+    <div class="tb-section">
+      <div class="tb-section-title">Tools</div>
+      <div class="tool-grid">
+        <div class="tool-btn active" onclick="selectTool(this)" title="Paint (B)">
+          <div class="tool-icon">✏️</div>
+          <div class="tool-label">Paint</div>
+        </div>
+        <div class="tool-btn" onclick="selectTool(this)" title="Erase (E)">
+          <div class="tool-icon">🧹</div>
+          <div class="tool-label">Erase</div>
+        </div>
+        <div class="tool-btn" onclick="selectTool(this)" title="Pick / Eyedropper (I)">
+          <div class="tool-icon">💧</div>
+          <div class="tool-label">Pick</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Tile Info -->
+    <div class="tb-section">
+      <div class="tb-section-title">Active Tile</div>
+      <div class="glyph-preview-box" onclick="openTileEditor()">
+        <div class="glyph-big" id="activeGlyph" style="background: #006400; color: #008000;">·</div>
+        <div class="glyph-info">
+          <div><strong>..</strong> — Grass</div>
+          <div style="color: var(--text-dim); font-size:10px;">Click to edit tile</div>
+          <div style="color: var(--text-dim); font-size:10px; margin-top:2px;">CP437 #183</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Colors -->
+    <div class="tb-section">
+      <div class="tb-section-title">Colors</div>
+      <div class="color-row" onclick="alert('Opens RGBA color picker for foreground.\nChanges the active tile registry entry.')">
+        <div class="color-swatch" style="background: #008000;"></div>
+        <div>
+          <div class="color-label">Foreground</div>
+          <div class="color-value">0, 128, 0, 255</div>
+        </div>
+      </div>
+      <div class="color-row" onclick="alert('Opens RGBA color picker for background.\nIncludes a Transparent toggle.')">
+        <div class="color-swatch" style="background: #006400;"></div>
+        <div>
+          <div class="color-label">Background</div>
+          <div class="color-value">0, 100, 0, 255</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Character -->
+    <div class="tb-section">
+      <div class="tb-section-title">Character</div>
+      <div class="glyph-preview-box" onclick="openCP437()">
+        <div class="glyph-big" style="background: var(--bg-surface); color: var(--text-bright);">·</div>
+        <div class="glyph-info">
+          <div><strong>Middle Dot</strong></div>
+          <div style="color: var(--text-dim); font-size:10px;">Index 183 (0xB7)</div>
+          <div style="color: var(--text-dim); font-size:10px;">Click to change glyph</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tile Palette -->
+    <div class="tb-section" style="border-bottom: none;">
+      <div class="tb-section-title">Tile Palette</div>
+      <input type="text" class="palette-search" placeholder="Search tiles...">
+
+      <div class="palette-category">Natural Terrain</div>
+      <div class="palette-grid">
+        <div class="palette-tile selected" style="background: #006400;" title="Grass (..)">
+          <span class="tile-glyph" style="color: #008000;">·</span>
+          <span class="tile-code">..</span>
+        </div>
+        <div class="palette-tile" style="background: #006400;" onclick="selectPaletteTile(this)" title="Tall Grass (.t)">
+          <span class="tile-glyph" style="color: #32CD32;">"</span>
+          <span class="tile-code">.t</span>
+        </div>
+        <div class="palette-tile" style="background: #8B4513;" onclick="selectPaletteTile(this)" title="Dirt Path (dd)">
+          <span class="tile-glyph" style="color: #D2B48C;">.</span>
+          <span class="tile-code">dd</span>
+        </div>
+        <div class="palette-tile" style="background: #8B4513;" onclick="selectPaletteTile(this)" title="Dirt Road (dr)">
+          <span class="tile-glyph" style="color: #DEB887;">=</span>
+          <span class="tile-code">dr</span>
+        </div>
+        <div class="palette-tile" style="background: #00008B;" onclick="selectPaletteTile(this)" title="Water Deep (~~)">
+          <span class="tile-glyph" style="color: #1E90FF;">≈</span>
+          <span class="tile-code">~~</span>
+        </div>
+        <div class="palette-tile" style="background: #0000CD;" onclick="selectPaletteTile(this)" title="Water Shallow (~.)">
+          <span class="tile-glyph" style="color: #ADD8E6;">~</span>
+          <span class="tile-code">~.</span>
+        </div>
+        <div class="palette-tile" style="background: #696969;" onclick="selectPaletteTile(this)" title="Rock/Rubble (rr)">
+          <span class="tile-glyph" style="color: #808080;">▒</span>
+          <span class="tile-code">rr</span>
+        </div>
+        <div class="palette-tile" style="background: #BDB76B;" onclick="selectPaletteTile(this)" title="Sand (ss)">
+          <span class="tile-glyph" style="color: #F0E68C;">·</span>
+          <span class="tile-code">ss</span>
+        </div>
+        <div class="palette-tile" style="background: #D3D3D3;" onclick="selectPaletteTile(this)" title="Snow (sn)">
+          <span class="tile-glyph" style="color: #FFFFFF;">·</span>
+          <span class="tile-code">sn</span>
+        </div>
+        <div class="palette-tile" style="background: #3A2A1A;" onclick="selectPaletteTile(this)" title="Mud (mm)">
+          <span class="tile-glyph" style="color: #BDB76B;">,</span>
+          <span class="tile-code">mm</span>
+        </div>
+      </div>
+
+      <div class="palette-category">Structural</div>
+      <div class="palette-grid">
+        <div class="palette-tile" style="background: #A9A9A9;" onclick="selectPaletteTile(this)" title="Stone Wall (##)">
+          <span class="tile-glyph" style="color: #808080;">█</span>
+          <span class="tile-code">##</span>
+        </div>
+        <div class="palette-tile" style="background: #4A2A2A;" onclick="selectPaletteTile(this)" title="Brick Wall (#b)">
+          <span class="tile-glyph" style="color: #CD5C5C;">█</span>
+          <span class="tile-code">#b</span>
+        </div>
+        <div class="palette-tile" style="background: #3A2A1A;" onclick="selectPaletteTile(this)" title="Wood Wall (#w)">
+          <span class="tile-glyph" style="color: #DEB887;">█</span>
+          <span class="tile-code">#w</span>
+        </div>
+        <div class="palette-tile" style="background: #A9A9A9;" onclick="selectPaletteTile(this)" title="Half Wall (#h)">
+          <span class="tile-glyph" style="color: #808080;">▄</span>
+          <span class="tile-code">#h</span>
+        </div>
+        <div class="palette-tile" style="background: #A9A9A9;" onclick="selectPaletteTile(this)" title="Window (ww)">
+          <span class="tile-glyph" style="color: #E0FFFF;">░</span>
+          <span class="tile-code">ww</span>
+        </div>
+      </div>
+
+      <div class="palette-category">Vegetation</div>
+      <div class="palette-grid">
+        <div class="palette-tile" style="background: #006400;" onclick="selectPaletteTile(this)" title="Tree Trunk (tr)">
+          <span class="tile-glyph" style="color: #8B4513;">♠</span>
+          <span class="tile-code">tr</span>
+        </div>
+        <div class="palette-tile" style="background: #006400;" onclick="selectPaletteTile(this)" title="Tree Canopy (tc)">
+          <span class="tile-glyph" style="color: #228B22;">♣</span>
+          <span class="tile-code">tc</span>
+        </div>
+        <div class="palette-tile" style="background: #006400;" onclick="selectPaletteTile(this)" title="Bush (bu)">
+          <span class="tile-glyph" style="color: #008000;">✿</span>
+          <span class="tile-code">bu</span>
+        </div>
+        <div class="palette-tile" style="background: #006400;" onclick="selectPaletteTile(this)" title="Flowers (fl)">
+          <span class="tile-glyph" style="color: #FF00FF;">✾</span>
+          <span class="tile-code">fl</span>
+        </div>
+      </div>
+
+      <div class="palette-category">Light Sources</div>
+      <div class="palette-grid">
+        <div class="palette-tile" style="background: #A9A9A9;" onclick="selectPaletteTile(this)" title="Wall Torch (#t)">
+          <span class="tile-glyph" style="color: #FFA500;">☼</span>
+          <span class="tile-code">#t</span>
+        </div>
+        <div class="palette-tile" style="background: #000;" onclick="selectPaletteTile(this)" title="Lamp Post (lt)">
+          <span class="tile-glyph" style="color: #FFD700;">╥</span>
+          <span class="tile-code">lt</span>
+        </div>
+        <div class="palette-tile" style="background: #2A1A0A;" onclick="selectPaletteTile(this)" title="Campfire (fi)">
+          <span class="tile-glyph" style="color: #FF4500;">♨</span>
+          <span class="tile-code">fi</span>
+        </div>
+      </div>
+
+      <div class="palette-category">Doors & Transitions</div>
+      <div class="palette-grid">
+        <div class="palette-tile" style="background: #2A1E14;" onclick="selectPaletteTile(this)" title="Door Closed ([])">
+          <span class="tile-glyph" style="color: #8B4513;">╬</span>
+          <span class="tile-code">[]</span>
+        </div>
+        <div class="palette-tile" style="background: #2A1E14;" onclick="selectPaletteTile(this)" title="Door Open ([o)">
+          <span class="tile-glyph" style="color: #8B4513;">╨</span>
+          <span class="tile-code">[o</span>
+        </div>
+        <div class="palette-tile" style="background: #A9A9A9;" onclick="selectPaletteTile(this)" title="Stairs Down (>>)">
+          <span class="tile-glyph" style="color: #FFF;">></span>
+          <span class="tile-code">>></span>
+        </div>
+        <div class="palette-tile" style="background: #A9A9A9;" onclick="selectPaletteTile(this)" title="Stairs Up (<<)">
+          <span class="tile-glyph" style="color: #FFF;"><</span>
+          <span class="tile-code"><<</span>
+        </div>
+      </div>
+
+      <button class="palette-add" onclick="openTileEditor()">+ New Tile</button>
+    </div>
+  </div>
+
+  <!-- ──── CANVAS ──── -->
+  <div class="canvas-area" id="canvasArea">
+    <div class="hint-banner">Wireframe — click tiles in palette, tools, or cells to see interactions</div>
+    <div class="canvas-grid" id="mapGrid"></div>
+    <div class="zoom-indicator">Zoom: 100%</div>
+    <div class="coord-tooltip" id="coordTooltip"></div>
+  </div>
+</div>
+
+<!-- ════════════ STATUS BAR ════════════ -->
+<div class="statusbar">
+  <div class="status-item">Cursor: <strong id="statusPos">12, 5</strong></div>
+  <div class="status-sep"></div>
+  <div class="status-item">Tile: <strong id="statusTile">.. Grass</strong></div>
+  <div class="status-sep"></div>
+  <div class="status-item">Map: <strong>30 × 20</strong></div>
+  <div class="status-sep"></div>
+  <div class="status-item">Registry: <strong>74 tiles</strong></div>
+  <div style="flex:1"></div>
+  <div class="status-item" style="color: var(--green);">● Saved</div>
+</div>
+
+<!-- ════════════ CP437 DIALOG ════════════ -->
+<div class="modal-overlay" id="cp437Modal">
+  <div class="modal" style="width: 640px;">
+    <div class="modal-header">
+      <div class="modal-title">Code Page 437 — Select Character</div>
+      <button class="modal-close" onclick="closeModal('cp437Modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="cp437-grid" id="cp437Grid"></div>
+      <div class="cp437-footer-info" id="cp437Info">Hover over a character to see details</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ TILE EDITOR DIALOG ════════════ -->
+<div class="modal-overlay" id="tileEditorModal">
+  <div class="modal tile-editor">
+    <div class="modal-header">
+      <div class="modal-title">Edit Tile</div>
+      <button class="modal-close" onclick="closeModal('tileEditorModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="te-preview" id="tePreview" style="background: #006400; color: #008000; font-size: 48px;">·</div>
+
+      <div class="te-row">
+        <div class="te-label">Code</div>
+        <input class="te-input mono" value=".." maxlength="2">
+        <div class="te-label" style="width:auto;">Name</div>
+        <input class="te-input" value="Grass">
+      </div>
+
+      <div class="te-row">
+        <div class="te-label">Glyph</div>
+        <div class="te-glyph-btn" onclick="openCP437()">·</div>
+        <span style="font-size:11px; color: var(--text-dim); font-family: 'JetBrains Mono', monospace;">CP437 #183</span>
+      </div>
+
+      <div class="te-row">
+        <div class="te-label">Foreground</div>
+        <div class="te-color-btn" style="background: #008000;" onclick="alert('RGBA color picker opens')"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim);">rgba(0, 128, 0, 255)</span>
+      </div>
+
+      <div class="te-row">
+        <div class="te-label">Background</div>
+        <div class="te-color-btn" style="background: #006400;" onclick="alert('RGBA color picker opens\nwith Transparent toggle')"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim);">rgba(0, 100, 0, 255)</span>
+        <label class="te-checkbox" style="margin-left: auto;">
+          <input type="checkbox"> Transparent
+        </label>
+      </div>
+
+      <div style="height: 12px"></div>
+      <div class="te-row" style="margin-bottom: 4px;">
+        <div class="te-label">Properties</div>
+      </div>
+      <div class="te-checkbox-row" style="padding-left: 102px; margin-bottom: 12px;">
+        <label class="te-checkbox"><input type="checkbox" checked> Walkable</label>
+        <label class="te-checkbox"><input type="checkbox" checked> Transparent</label>
+        <label class="te-checkbox"><input type="checkbox" checked> Light Pass</label>
+      </div>
+
+      <div class="te-row">
+        <div class="te-label">Speed Mod</div>
+        <input class="te-input mono" value="1.0" style="width: 70px;">
+        <div class="te-label" style="width: auto; margin-left: 12px;">Light Radius</div>
+        <input class="te-input mono" value="0" style="width: 70px;">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('tileEditorModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="closeModal('tileEditorModal')">Save Tile</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ RIGHT-CLICK CONTEXT MENU ════════════ -->
+<div class="context-menu" id="ctxMenu">
+  <div class="ctx-item" onclick="openTileEditor(); hideCtx();">Edit Tile</div>
+  <div class="ctx-item" onclick="hideCtx()">Duplicate Tile</div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="hideCtx()" style="color: var(--red);">Delete Tile</div>
+</div>
+
+<script>
+// ─── Sample map data (simplified forest) ───
+const MAP_W = 30;
+const MAP_H = 15;
+const tileColors = {
+  'tr': { bg: '#006400', fg: '#8B4513', ch: '♠' },
+  'tc': { bg: '#006400', fg: '#228B22', ch: '♣' },
+  '..': { bg: '#006400', fg: '#008000', ch: '·' },
+  'dd': { bg: '#8B4513', fg: '#D2B48C', ch: '.' },
+  'fl': { bg: '#006400', fg: '#FF00FF', ch: '✾' },
+  'fi': { bg: '#2A1A0A', fg: '#FF4500', ch: '♨' },
+  'bu': { bg: '#006400', fg: '#008000', ch: '✿' },
+  '##': { bg: '#A9A9A9', fg: '#808080', ch: '█' },
+  '~~': { bg: '#00008B', fg: '#1E90FF', ch: '≈' },
+  'pt': { bg: '#1A0A2A', fg: '#9370DB', ch: '◊' },
+};
+const defaultTile = { bg: '#1a1e2a', fg: '#333', ch: '·' };
+
+// Parse a terrain string into the map
+const terrainStr = `trtctrtctrtctrtctrtctrtctrtctrtc
+tctrtctrtctrtctrtctrtctrtctrtctr
+tr..........trtc....trtc........
+tc..........tctc....tctc........
+tr....fl....dddddddddddddddd..tr
+tc..........dddddddddddddddd..tc
+tr..........trtc....fi....trtc..
+tc..bu......tctc..........tctc..
+tr..........trtc..........trtc..
+tc..........tctc..........tctc..
+tr....fl....trtcddddddddddtrtc..
+tc..........tctc....tctc........
+tr..........trtc....trtc........
+tc..bu......tctc....bu..tctc....
+tctrtctrtctrtctrtctrtctrtctrtctr`;
+
+const mapData = [];
+const lines = terrainStr.split('\n');
+for (let y = 0; y < MAP_H; y++) {
+  const row = [];
+  const line = lines[y] || '';
+  for (let x = 0; x < MAP_W; x++) {
+    const code = line.substr(x * 2, 2) || '..';
+    row.push(code);
+  }
+  mapData.push(row);
+}
+
+// ─── Render map grid ───
+const grid = document.getElementById('mapGrid');
+let tableHTML = '<table>';
+for (let y = 0; y < MAP_H; y++) {
+  tableHTML += '<tr>';
+  for (let x = 0; x < MAP_W; x++) {
+    const code = mapData[y][x];
+    const t = tileColors[code] || defaultTile;
+    tableHTML += `<td style="background:${t.bg};color:${t.fg};" data-x="${x}" data-y="${y}" data-code="${code}" onmouseover="hoverCell(this)" oncontextmenu="return false">${t.ch}</td>`;
+  }
+  tableHTML += '</tr>';
+}
+tableHTML += '</table>';
+grid.innerHTML = tableHTML;
+
+function hoverCell(td) {
+  const x = td.dataset.x;
+  const y = td.dataset.y;
+  const code = td.dataset.code;
+  document.getElementById('statusPos').textContent = `${x}, ${y}`;
+  const names = { 'tr': 'Tree Trunk', 'tc': 'Tree Canopy', '..': 'Grass', 'dd': 'Dirt Path', 'fl': 'Flowers', 'fi': 'Campfire', 'bu': 'Bush', '##': 'Stone Wall', '~~': 'Water (Deep)', 'pt': 'Portal' };
+  document.getElementById('statusTile').textContent = `${code} ${names[code] || 'Unknown'}`;
+}
+
+// ─── Tools ───
+function selectTool(btn) {
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function selectPaletteTile(el) {
+  document.querySelectorAll('.palette-tile').forEach(t => t.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ─── Modals ───
+function openCP437() {
+  document.getElementById('cp437Modal').classList.add('open');
+}
+function openTileEditor() {
+  document.getElementById('tileEditorModal').classList.add('open');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// ─── CP437 Grid ───
+const cp437Chars = [
+  ' ','☺','☻','♥','♦','♣','♠','•','◘','○','◙','♂','♀','♪','♫','☼',
+  '►','◄','↕','‼','¶','§','▬','↨','↑','↓','→','←','∟','↔','▲','▼',
+  ' ','!','"','#','$','%','&',"'",'(',')','*','+',',','-','.','/','0','1','2','3','4','5','6','7','8','9',':',';','<','=','>','?',
+  '@','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','[','\\',']','^','_',
+  '`','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','{','|','}','~','⌂',
+  'Ç','ü','é','â','ä','à','å','ç','ê','ë','è','ï','î','ì','Ä','Å','É','æ','Æ','ô','ö','ò','û','ù','ÿ','Ö','Ü','¢','£','¥','₧','ƒ',
+  'á','í','ó','ú','ñ','Ñ','ª','º','¿','⌐','¬','½','¼','¡','«','»','░','▒','▓','│','┤','╡','╢','╖','╕','╣','║','╗','╝','╜','╛','┐',
+  '└','┴','┬','├','─','┼','╞','╟','╚','╔','╩','╦','╠','═','╬','╧','╨','╤','╥','╙','╘','╒','╓','╫','╪','┘','┌','█','▄','▌','▐','▀',
+  'α','ß','Γ','π','Σ','σ','µ','τ','Φ','Θ','Ω','δ','∞','φ','ε','∩','≡','±','≥','≤','⌠','⌡','÷','≈','°','∙','·','√','ⁿ','²','■',' '
+];
+const cp437Names = {
+  0:'NULL',1:'Smiley',2:'Smiley Inv',3:'Heart',4:'Diamond',5:'Club',6:'Spade',
+  176:'Light Shade',177:'Medium Shade',178:'Dark Shade',219:'Full Block',220:'Lower Half',221:'Left Half',222:'Right Half',223:'Upper Half',
+  250:'Middle Dot',254:'Small Square'
+};
+const gridEl = document.getElementById('cp437Grid');
+let cp437HTML = '';
+for (let i = 0; i < 256; i++) {
+  const ch = cp437Chars[i] || ' ';
+  const picked = i === 183 ? ' picked' : '';
+  cp437HTML += `<div class="cp437-cell${picked}" data-idx="${i}" onmouseenter="cp437Hover(${i})" onclick="cp437Pick(${i})">${ch}</div>`;
+}
+gridEl.innerHTML = cp437HTML;
+
+function cp437Hover(idx) {
+  const name = cp437Names[idx] || '';
+  document.getElementById('cp437Info').textContent = `Index: ${idx} (0x${idx.toString(16).toUpperCase().padStart(2,'0')})${name ? ' — ' + name : ''}`;
+}
+function cp437Pick(idx) {
+  document.querySelectorAll('.cp437-cell').forEach(c => c.classList.remove('picked'));
+  document.querySelector(`.cp437-cell[data-idx="${idx}"]`).classList.add('picked');
+  setTimeout(() => closeModal('cp437Modal'), 200);
+}
+
+// ─── Context menu on palette tiles ───
+document.querySelectorAll('.palette-tile').forEach(tile => {
+  tile.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    const ctx = document.getElementById('ctxMenu');
+    ctx.style.left = e.clientX + 'px';
+    ctx.style.top = e.clientY + 'px';
+    ctx.classList.add('open');
+  });
+});
+function hideCtx() { document.getElementById('ctxMenu').classList.remove('open'); }
+document.addEventListener('click', hideCtx);
+</script>
+</body>
+</html>

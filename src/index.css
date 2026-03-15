@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+:root {
+  --bg-darkest: #0d0f12;
+  --bg-dark: #141720;
+  --bg-panel: #1a1e2a;
+  --bg-surface: #222738;
+  --bg-hover: #2a3048;
+  --bg-active: #333a55;
+  --border: #2e3450;
+  --border-light: #3a4268;
+  --text: #c8cdd8;
+  --text-dim: #6b7394;
+  --text-bright: #e8ecf4;
+  --accent: #4a9eff;
+  --accent-dim: #2a5a99;
+  --accent-glow: rgba(74, 158, 255, 0.15);
+  --green: #3ddc84;
+  --red: #ff5555;
+  --orange: #ffaa33;
+  --toolbar-width: 260px;
+  --statusbar-height: 32px;
+  --menubar-height: 36px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  background: var(--bg-darkest);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+#root {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
