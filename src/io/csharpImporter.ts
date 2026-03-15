@@ -15,7 +15,6 @@ export function importCSharpRegistry(source: string): ImportResult {
   const tiles: TileDefinition[] = []
   const errors: string[] = []
 
-  // Match Reg(...) calls, handling nested parentheses
   const regCalls = extractRegCalls(source)
 
   for (let i = 0; i < regCalls.length; i++) {
@@ -32,6 +31,10 @@ export function importCSharpRegistry(source: string): ImportResult {
   return { tiles, errors }
 }
 
+/**
+ * Extract Reg(...) call bodies from source, correctly handling
+ * string/char literals that contain parentheses, brackets, or commas.
+ */
 function extractRegCalls(source: string): string[] {
   const calls: string[] = []
   const pattern = /\bReg\s*\(/g
@@ -41,9 +44,23 @@ function extractRegCalls(source: string): string[] {
     const start = match.index + match[0].length
     let depth = 1
     let pos = start
+    let inString = false
+    let inChar = false
+
     while (pos < source.length && depth > 0) {
-      if (source[pos] === '(') depth++
-      else if (source[pos] === ')') depth--
+      const ch = source[pos]
+      const prev = pos > 0 ? source[pos - 1] : ''
+
+      if (inString) {
+        if (ch === '"' && prev !== '\\') inString = false
+      } else if (inChar) {
+        if (ch === "'" && prev !== '\\') inChar = false
+      } else {
+        if (ch === '"') inString = true
+        else if (ch === "'") inChar = true
+        else if (ch === '(') depth++
+        else if (ch === ')') depth--
+      }
       pos++
     }
     if (depth === 0) {
@@ -54,15 +71,36 @@ function extractRegCalls(source: string): string[] {
   return calls
 }
 
+/**
+ * Split arguments, respecting string/char literals and nested parens.
+ */
 function splitArgs(argsStr: string): string[] {
   const args: string[] = []
   let depth = 0
   let current = ''
+  let inString = false
+  let inChar = false
 
   for (let i = 0; i < argsStr.length; i++) {
     const ch = argsStr[i]
-    if (ch === '(' || ch === '[') depth++
-    else if (ch === ')' || ch === ']') depth--
+    const prev = i > 0 ? argsStr[i - 1] : ''
+
+    if (inString) {
+      current += ch
+      if (ch === '"' && prev !== '\\') inString = false
+      continue
+    }
+    if (inChar) {
+      current += ch
+      if (ch === "'" && prev !== '\\') inChar = false
+      continue
+    }
+
+    if (ch === '"') { inString = true; current += ch; continue }
+    if (ch === "'") { inChar = true; current += ch; continue }
+
+    if (ch === '(') depth++
+    else if (ch === ')') depth--
     else if (ch === ',' && depth === 0) {
       args.push(current.trim())
       current = ''
@@ -104,16 +142,22 @@ function parseColor(expr: string): RGBA {
   throw new Error(`Cannot parse color: ${trimmed}`)
 }
 
+/**
+ * Parse a C# char literal to a CP437 glyph index.
+ * Falls back to closest CP437 match or raw Unicode codepoint for unmapped chars.
+ */
 function parseCharLiteral(expr: string): number {
   const trimmed = expr.trim()
 
   // '\uXXXX' unicode escape
   const unicodeMatch = trimmed.match(/^'\\u([0-9a-fA-F]{4})'$/)
   if (unicodeMatch) {
-    const char = String.fromCharCode(parseInt(unicodeMatch[1], 16))
+    const codepoint = parseInt(unicodeMatch[1], 16)
+    const char = String.fromCharCode(codepoint)
     const cp437 = unicodeToCP437(char)
     if (cp437 !== undefined) return cp437
-    throw new Error(`Unicode char \\u${unicodeMatch[1]} has no CP437 mapping`)
+    // Fallback: find a reasonable substitute or use a placeholder
+    return unicodeFallback(codepoint)
   }
 
   // 'c' single char
@@ -121,10 +165,9 @@ function parseCharLiteral(expr: string): number {
   if (charMatch) {
     const cp437 = unicodeToCP437(charMatch[1])
     if (cp437 !== undefined) return cp437
-    // Fallback: try char code for basic ASCII
     const code = charMatch[1].charCodeAt(0)
     if (code >= 32 && code <= 126) return code
-    throw new Error(`Character '${charMatch[1]}' has no CP437 mapping`)
+    return unicodeFallback(code)
   }
 
   // Direct integer literal
@@ -141,21 +184,35 @@ function parseCharLiteral(expr: string): number {
     const cp437 = unicodeToCP437(char)
     if (cp437 !== undefined) return cp437
     if (code >= 32 && code <= 126) return code
-    throw new Error(`Cast expression ${trimmed} has no CP437 mapping`)
+    return unicodeFallback(code)
   }
 
   throw new Error(`Cannot parse character: ${trimmed}`)
 }
 
+/** Map unmapped Unicode codepoints to reasonable CP437 substitutes */
+function unicodeFallback(codepoint: number): number {
+  const fallbacks: Record<number, number> = {
+    0x25CA: 4,    // ◊ lozenge → ♦ (CP437 4)
+    0x2668: 15,   // ♨ hot springs → ☼ (CP437 15)
+    0x273F: 42,   // ✿ flower → * (CP437 42)
+    0x273E: 42,   // ✾ flower → * (CP437 42)
+    0x2573: 88,   // ╳ box drawings X → X (CP437 88)
+    0x03A9: 234,  // Ω omega → Ω (CP437 234)
+  }
+  if (fallbacks[codepoint] !== undefined) return fallbacks[codepoint]
+  // Last resort: use a question mark
+  return 63 // '?'
+}
+
 function parseRegCall(argsStr: string): TileDefinition | null {
-  const args = splitArgs(argsStr)
+  // Strip trailing C# comments from args
+  const cleaned = argsStr.replace(/\/\/.*$/gm, '')
+  const args = splitArgs(cleaned)
+
   if (args.length < 6) {
     throw new Error(`Expected at least 6 arguments, got ${args.length}: ${argsStr.substring(0, 80)}`)
   }
-
-  // Parse positional args: code, name, glyph, fg, bg, walkable, transparent, lightPass
-  // The exact parameter order may vary; common pattern:
-  // Reg("code", "name", 'glyph', Color.FG, Color.BG, walkable, transparent, lightPass, ...)
 
   const code = parseStringLiteral(args[0])
   const name = parseStringLiteral(args[1])
@@ -198,7 +255,6 @@ function parseRegCall(argsStr: string): TileDefinition | null {
 
 function parseStringLiteral(expr: string): string {
   const trimmed = expr.trim()
-  // "string" or @"string"
   const match = trimmed.match(/^@?"((?:[^"\\]|\\.)*)"$/)
   if (match) return match[1].replace(/\\"/g, '"')
   throw new Error(`Cannot parse string: ${trimmed}`)
@@ -208,7 +264,6 @@ function parseBool(expr: string): boolean {
   const trimmed = expr.trim().toLowerCase()
   if (trimmed === 'true') return true
   if (trimmed === 'false') return false
-  // Check for named param like "walkable: true"
   const named = trimmed.match(/\w+\s*:\s*(true|false)/)
   if (named) return named[1] === 'true'
   throw new Error(`Cannot parse boolean: ${expr}`)

@@ -1,0 +1,1707 @@
+{
+  "version": 1,
+  "tiles": [
+    {
+      "code": "..",
+      "name": "Grass",
+      "glyph": 250,
+      "fg": {
+        "r": 0,
+        "g": 128,
+        "b": 0,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Natural Terrain"
+    },
+    {
+      "code": ".t",
+      "name": "Tall Grass",
+      "glyph": 34,
+      "fg": {
+        "r": 50,
+        "g": 205,
+        "b": 50,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 0.8,
+      "lightRadius": 0,
+      "category": "Natural Terrain"
+    },
+    {
+      "code": "dd",
+      "name": "Dirt Path",
+      "glyph": 46,
+      "fg": {
+        "r": 210,
+        "g": 180,
+        "b": 140,
+        "a": 255
+      },
+      "bg": {
+        "r": 139,
+        "g": 69,
+        "b": 19,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Natural Terrain"
+    },
+    {
+      "code": "dr",
+      "name": "Dirt Road",
+      "glyph": 61,
+      "fg": {
+        "r": 222,
+        "g": 184,
+        "b": 135,
+        "a": 255
+      },
+      "bg": {
+        "r": 139,
+        "g": 69,
+        "b": 19,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Natural Terrain"
+    },
+    {
+      "code": "~~",
+      "name": "Water (Deep)",
+      "glyph": 247,
+      "fg": {
+        "r": 30,
+        "g": 144,
+        "b": 255,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 139,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Natural Terrain"
+    },
+    {
+      "code": "~.",
+      "name": "Water (Shallow)",
+      "glyph": 126,
+      "fg": {
+        "r": 173,
+        "g": 216,
+        "b": 230,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 205,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 0.6,
+      "lightRadius": 0,
+      "category": "Natural Terrain"
+    },
+    {
+      "code": "mm",
+      "name": "Mud",
+      "glyph": 44,
+      "fg": {
+        "r": 189,
+        "g": 183,
+        "b": 107,
+        "a": 255
+      },
+      "bg": {
+        "r": 58,
+        "g": 42,
+        "b": 26,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 0.6,
+      "lightRadius": 0,
+      "category": "Natural Terrain"
+    },
+    {
+      "code": "rr",
+      "name": "Rock/Rubble",
+      "glyph": 177,
+      "fg": {
+        "r": 128,
+        "g": 128,
+        "b": 128,
+        "a": 255
+      },
+      "bg": {
+        "r": 105,
+        "g": 105,
+        "b": 105,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Natural Terrain"
+    },
+    {
+      "code": "ss",
+      "name": "Sand",
+      "glyph": 250,
+      "fg": {
+        "r": 240,
+        "g": 230,
+        "b": 140,
+        "a": 255
+      },
+      "bg": {
+        "r": 189,
+        "g": 183,
+        "b": 107,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Natural Terrain"
+    },
+    {
+      "code": "sn",
+      "name": "Snow",
+      "glyph": 250,
+      "fg": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "bg": {
+        "r": 211,
+        "g": 211,
+        "b": 211,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Natural Terrain"
+    },
+    {
+      "code": "##",
+      "name": "Stone Wall",
+      "glyph": 219,
+      "fg": {
+        "r": 128,
+        "g": 128,
+        "b": 128,
+        "a": 255
+      },
+      "bg": {
+        "r": 169,
+        "g": 169,
+        "b": 169,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Structural"
+    },
+    {
+      "code": "#b",
+      "name": "Brick Wall",
+      "glyph": 219,
+      "fg": {
+        "r": 205,
+        "g": 92,
+        "b": 92,
+        "a": 255
+      },
+      "bg": {
+        "r": 74,
+        "g": 42,
+        "b": 42,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Structural"
+    },
+    {
+      "code": "#w",
+      "name": "Wood Wall",
+      "glyph": 219,
+      "fg": {
+        "r": 222,
+        "g": 184,
+        "b": 135,
+        "a": 255
+      },
+      "bg": {
+        "r": 58,
+        "g": 42,
+        "b": 26,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Structural"
+    },
+    {
+      "code": "#c",
+      "name": "Cave Wall",
+      "glyph": 178,
+      "fg": {
+        "r": 47,
+        "g": 79,
+        "b": 79,
+        "a": 255
+      },
+      "bg": {
+        "r": 26,
+        "g": 26,
+        "b": 30,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Structural"
+    },
+    {
+      "code": "#d",
+      "name": "Dungeon Wall",
+      "glyph": 219,
+      "fg": {
+        "r": 112,
+        "g": 128,
+        "b": 144,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 42,
+        "b": 48,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Structural"
+    },
+    {
+      "code": "#h",
+      "name": "Half Wall",
+      "glyph": 220,
+      "fg": {
+        "r": 128,
+        "g": 128,
+        "b": 128,
+        "a": 255
+      },
+      "bg": {
+        "r": 169,
+        "g": 169,
+        "b": 169,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Structural"
+    },
+    {
+      "code": "ww",
+      "name": "Window",
+      "glyph": 176,
+      "fg": {
+        "r": 224,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "bg": {
+        "r": 169,
+        "g": 169,
+        "b": 169,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Structural"
+    },
+    {
+      "code": "fn",
+      "name": "Fence",
+      "glyph": 215,
+      "fg": {
+        "r": 222,
+        "g": 184,
+        "b": 135,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Structural"
+    },
+    {
+      "code": "fp",
+      "name": "Fence Post",
+      "glyph": 206,
+      "fg": {
+        "r": 222,
+        "g": 184,
+        "b": 135,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Structural"
+    },
+    {
+      "code": "__",
+      "name": "Wood Floor",
+      "glyph": 95,
+      "fg": {
+        "r": 210,
+        "g": 180,
+        "b": 140,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 30,
+        "b": 20,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interior Floors"
+    },
+    {
+      "code": "sf",
+      "name": "Stone Floor",
+      "glyph": 46,
+      "fg": {
+        "r": 211,
+        "g": 211,
+        "b": 211,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 42,
+        "b": 46,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interior Floors"
+    },
+    {
+      "code": "tf",
+      "name": "Tile Floor",
+      "glyph": 250,
+      "fg": {
+        "r": 173,
+        "g": 216,
+        "b": 230,
+        "a": 255
+      },
+      "bg": {
+        "r": 30,
+        "g": 30,
+        "b": 42,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interior Floors"
+    },
+    {
+      "code": "cf",
+      "name": "Carpet",
+      "glyph": 176,
+      "fg": {
+        "r": 220,
+        "g": 20,
+        "b": 60,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 20,
+        "b": 20,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interior Floors"
+    },
+    {
+      "code": "dn",
+      "name": "Dungeon Floor",
+      "glyph": 46,
+      "fg": {
+        "r": 105,
+        "g": 105,
+        "b": 105,
+        "a": 255
+      },
+      "bg": {
+        "r": 26,
+        "g": 26,
+        "b": 30,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interior Floors"
+    },
+    {
+      "code": ">>",
+      "name": "Stairs Down",
+      "glyph": 62,
+      "fg": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "bg": {
+        "r": 169,
+        "g": 169,
+        "b": 169,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Doors & Transitions"
+    },
+    {
+      "code": "<<",
+      "name": "Stairs Up",
+      "glyph": 60,
+      "fg": {
+        "r": 255,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "bg": {
+        "r": 169,
+        "g": 169,
+        "b": 169,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Doors & Transitions"
+    },
+    {
+      "code": "[]",
+      "name": "Door (Closed)",
+      "glyph": 206,
+      "fg": {
+        "r": 139,
+        "g": 69,
+        "b": 19,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 30,
+        "b": 20,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Doors & Transitions"
+    },
+    {
+      "code": "[o",
+      "name": "Door (Open)",
+      "glyph": 208,
+      "fg": {
+        "r": 139,
+        "g": 69,
+        "b": 19,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 30,
+        "b": 20,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Doors & Transitions"
+    },
+    {
+      "code": "[l",
+      "name": "Door (Locked)",
+      "glyph": 206,
+      "fg": {
+        "r": 139,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 30,
+        "b": 20,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Doors & Transitions"
+    },
+    {
+      "code": "gd",
+      "name": "Gate",
+      "glyph": 215,
+      "fg": {
+        "r": 128,
+        "g": 128,
+        "b": 128,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Doors & Transitions"
+    },
+    {
+      "code": "pt",
+      "name": "Portal",
+      "glyph": 4,
+      "fg": {
+        "r": 147,
+        "g": 112,
+        "b": 219,
+        "a": 255
+      },
+      "bg": {
+        "r": 26,
+        "g": 10,
+        "b": 42,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 4,
+      "category": "Doors & Transitions"
+    },
+    {
+      "code": "cb",
+      "name": "Cave Entrance",
+      "glyph": 178,
+      "fg": {
+        "r": 169,
+        "g": 169,
+        "b": 169,
+        "a": 255
+      },
+      "bg": {
+        "r": 10,
+        "g": 10,
+        "b": 10,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Doors & Transitions"
+    },
+    {
+      "code": "#t",
+      "name": "Wall Torch",
+      "glyph": 15,
+      "fg": {
+        "r": 255,
+        "g": 165,
+        "b": 0,
+        "a": 255
+      },
+      "bg": {
+        "r": 169,
+        "g": 169,
+        "b": 169,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 4,
+      "category": "Light Sources"
+    },
+    {
+      "code": "lt",
+      "name": "Lamp Post",
+      "glyph": 210,
+      "fg": {
+        "r": 255,
+        "g": 215,
+        "b": 0,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 5,
+      "category": "Light Sources"
+    },
+    {
+      "code": "fi",
+      "name": "Campfire",
+      "glyph": 15,
+      "fg": {
+        "r": 255,
+        "g": 69,
+        "b": 0,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 26,
+        "b": 10,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 6,
+      "category": "Light Sources"
+    },
+    {
+      "code": "br",
+      "name": "Brazier",
+      "glyph": 30,
+      "fg": {
+        "r": 255,
+        "g": 165,
+        "b": 0,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 26,
+        "b": 10,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 5,
+      "category": "Light Sources"
+    },
+    {
+      "code": "cn",
+      "name": "Candle",
+      "glyph": 209,
+      "fg": {
+        "r": 240,
+        "g": 230,
+        "b": 140,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 2,
+      "category": "Light Sources"
+    },
+    {
+      "code": "la",
+      "name": "Lantern",
+      "glyph": 8,
+      "fg": {
+        "r": 255,
+        "g": 215,
+        "b": 0,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 3,
+      "category": "Light Sources"
+    },
+    {
+      "code": "cr",
+      "name": "Crate",
+      "glyph": 254,
+      "fg": {
+        "r": 222,
+        "g": 184,
+        "b": 135,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 30,
+        "b": 20,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interactive Objects (tile"
+    },
+    {
+      "code": "bl",
+      "name": "Barrel",
+      "glyph": 9,
+      "fg": {
+        "r": 139,
+        "g": 69,
+        "b": 19,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 30,
+        "b": 20,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interactive Objects (tile"
+    },
+    {
+      "code": "sp",
+      "name": "Signpost",
+      "glyph": 209,
+      "fg": {
+        "r": 222,
+        "g": 184,
+        "b": 135,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interactive Objects (tile"
+    },
+    {
+      "code": "bn",
+      "name": "Bench",
+      "glyph": 205,
+      "fg": {
+        "r": 222,
+        "g": 184,
+        "b": 135,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interactive Objects (tile"
+    },
+    {
+      "code": "an",
+      "name": "Anvil",
+      "glyph": 193,
+      "fg": {
+        "r": 169,
+        "g": 169,
+        "b": 169,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interactive Objects (tile"
+    },
+    {
+      "code": "al",
+      "name": "Altar",
+      "glyph": 203,
+      "fg": {
+        "r": 245,
+        "g": 245,
+        "b": 245,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 42,
+        "b": 48,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interactive Objects (tile"
+    },
+    {
+      "code": "gr",
+      "name": "Grave",
+      "glyph": 194,
+      "fg": {
+        "r": 128,
+        "g": 128,
+        "b": 128,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interactive Objects (tile"
+    },
+    {
+      "code": "Su",
+      "name": "Statue",
+      "glyph": 4,
+      "fg": {
+        "r": 211,
+        "g": 211,
+        "b": 211,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interactive Objects (tile"
+    },
+    {
+      "code": "bg",
+      "name": "Bookshelf",
+      "glyph": 222,
+      "fg": {
+        "r": 139,
+        "g": 69,
+        "b": 19,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 26,
+        "b": 10,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interactive Objects (tile"
+    },
+    {
+      "code": "bd",
+      "name": "Bed",
+      "glyph": 22,
+      "fg": {
+        "r": 205,
+        "g": 92,
+        "b": 92,
+        "a": 255
+      },
+      "bg": {
+        "r": 42,
+        "g": 26,
+        "b": 20,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interactive Objects (tile"
+    },
+    {
+      "code": "tb",
+      "name": "Table",
+      "glyph": 209,
+      "fg": {
+        "r": 222,
+        "g": 184,
+        "b": 135,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Interactive Objects (tile"
+    },
+    {
+      "code": "tr",
+      "name": "Tree Trunk",
+      "glyph": 6,
+      "fg": {
+        "r": 139,
+        "g": 69,
+        "b": 19,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Vegetation & Decoration"
+    },
+    {
+      "code": "tc",
+      "name": "Tree Canopy",
+      "glyph": 5,
+      "fg": {
+        "r": 34,
+        "g": 139,
+        "b": 34,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Vegetation & Decoration"
+    },
+    {
+      "code": "bu",
+      "name": "Bush",
+      "glyph": 42,
+      "fg": {
+        "r": 0,
+        "g": 128,
+        "b": 0,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Vegetation & Decoration"
+    },
+    {
+      "code": "fl",
+      "name": "Flowers",
+      "glyph": 42,
+      "fg": {
+        "r": 255,
+        "g": 0,
+        "b": 255,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Vegetation & Decoration"
+    },
+    {
+      "code": "vn",
+      "name": "Vines",
+      "glyph": 181,
+      "fg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "bg": {
+        "r": 105,
+        "g": 105,
+        "b": 105,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Vegetation & Decoration"
+    },
+    {
+      "code": "ms",
+      "name": "Mushroom",
+      "glyph": 6,
+      "fg": {
+        "r": 220,
+        "g": 20,
+        "b": 60,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Vegetation & Decoration"
+    },
+    {
+      "code": "lg",
+      "name": "Log",
+      "glyph": 205,
+      "fg": {
+        "r": 139,
+        "g": 69,
+        "b": 19,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Vegetation & Decoration"
+    },
+    {
+      "code": "cw",
+      "name": "Cobweb",
+      "glyph": 88,
+      "fg": {
+        "r": 211,
+        "g": 211,
+        "b": 211,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Vegetation & Decoration"
+    },
+    {
+      "code": "T<",
+      "name": "Tree Canopy (L)",
+      "glyph": 8,
+      "fg": {
+        "r": 34,
+        "g": 139,
+        "b": 34,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Expanded Vegetation (Modular Trees)"
+    },
+    {
+      "code": "T>",
+      "name": "Tree Canopy (R)",
+      "glyph": 10,
+      "fg": {
+        "r": 34,
+        "g": 139,
+        "b": 34,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Expanded Vegetation (Modular Trees)"
+    },
+    {
+      "code": "TR",
+      "name": "Tree Root",
+      "glyph": 192,
+      "fg": {
+        "r": 139,
+        "g": 69,
+        "b": 19,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 100,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Expanded Vegetation (Modular Trees)"
+    },
+    {
+      "code": "Ww",
+      "name": "Woe-Willow",
+      "glyph": 215,
+      "fg": {
+        "r": 47,
+        "g": 79,
+        "b": 79,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Expanded Vegetation (Modular Trees)"
+    },
+    {
+      "code": "gl",
+      "name": "Glow-Lichen",
+      "glyph": 44,
+      "fg": {
+        "r": 0,
+        "g": 255,
+        "b": 255,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 2,
+      "category": "Environmental Lighting & Fog"
+    },
+    {
+      "code": "bf",
+      "name": "Bonfire",
+      "glyph": 19,
+      "fg": {
+        "r": 255,
+        "g": 69,
+        "b": 0,
+        "a": 255
+      },
+      "bg": {
+        "r": 139,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 8,
+      "category": "Environmental Lighting & Fog"
+    },
+    {
+      "code": "ls",
+      "name": "Light Stone",
+      "glyph": 10,
+      "fg": {
+        "r": 238,
+        "g": 232,
+        "b": 170,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 3,
+      "category": "Environmental Lighting & Fog"
+    },
+    {
+      "code": "Ss",
+      "name": "Stone Steps",
+      "glyph": 197,
+      "fg": {
+        "r": 128,
+        "g": 128,
+        "b": 128,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Additional Structures"
+    },
+    {
+      "code": "rc",
+      "name": "Rock Column",
+      "glyph": 234,
+      "fg": {
+        "r": 112,
+        "g": 128,
+        "b": 144,
+        "a": 255
+      },
+      "bg": {
+        "r": 105,
+        "g": 105,
+        "b": 105,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Additional Structures"
+    },
+    {
+      "code": "T^",
+      "name": "Tree Top",
+      "glyph": 22,
+      "fg": {
+        "r": 34,
+        "g": 139,
+        "b": 34,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Modular Tree Parts (Shape over Substance)"
+    },
+    {
+      "code": "T(",
+      "name": "Tree Left",
+      "glyph": 222,
+      "fg": {
+        "r": 34,
+        "g": 139,
+        "b": 34,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Modular Tree Parts (Shape over Substance)"
+    },
+    {
+      "code": "T)",
+      "name": "Tree Right",
+      "glyph": 221,
+      "fg": {
+        "r": 34,
+        "g": 139,
+        "b": 34,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Modular Tree Parts (Shape over Substance)"
+    },
+    {
+      "code": "T#",
+      "name": "Tree Leafy",
+      "glyph": 178,
+      "fg": {
+        "r": 34,
+        "g": 139,
+        "b": 34,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Modular Tree Parts (Shape over Substance)"
+    },
+    {
+      "code": "TT",
+      "name": "Tree Trunk",
+      "glyph": 186,
+      "fg": {
+        "r": 139,
+        "g": 69,
+        "b": 19,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Modular Tree Parts (Shape over Substance)"
+    },
+    {
+      "code": "Pl",
+      "name": "Plaza Tile",
+      "glyph": 250,
+      "fg": {
+        "r": 128,
+        "g": 128,
+        "b": 128,
+        "a": 255
+      },
+      "bg": {
+        "r": 20,
+        "g": 20,
+        "b": 25,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Modular Tree Parts (Shape over Substance)"
+    },
+    {
+      "code": "H#",
+      "name": "Thatch Roof",
+      "glyph": 177,
+      "fg": {
+        "r": 218,
+        "g": 165,
+        "b": 32,
+        "a": 255
+      },
+      "bg": {
+        "r": 139,
+        "g": 69,
+        "b": 19,
+        "a": 255
+      },
+      "walkable": false,
+      "transparent": false,
+      "lightPass": false,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Modular Tree Parts (Shape over Substance)"
+    },
+    {
+      "code": "st",
+      "name": "Stone Path",
+      "glyph": 179,
+      "fg": {
+        "r": 169,
+        "g": 169,
+        "b": 169,
+        "a": 255
+      },
+      "bg": {
+        "r": 0,
+        "g": 0,
+        "b": 0,
+        "a": 255
+      },
+      "walkable": true,
+      "transparent": true,
+      "lightPass": true,
+      "speedMod": 1,
+      "lightRadius": 0,
+      "category": "Modular Tree Parts (Shape over Substance)"
+    }
+  ]
+}
