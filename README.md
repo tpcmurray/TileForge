@@ -1,73 +1,69 @@
-# React + TypeScript + Vite
+# TileForge
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A browser-based tile map editor built for **ASCII Ascendant**. TileForge externalizes the game's tile registry into a portable JSON format and provides a real-time visual canvas for painting and previewing terrain maps.
 
-Currently, two official plugins are available:
+## Why
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Tuning tile appearance (glyphs, colors, spatial composition) is painfully slow when the tile registry is hardcoded in C# and every change requires recompilation. TileForge gives you instant visual feedback — change a tile's glyph or color and see the result on the map immediately.
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Tile Registry Editor** — define tiles with CP437 glyphs, RGBA foreground/background colors, and gameplay properties (walkable, transparent, light, speed)
+- **Map Canvas** — paint terrain maps on a zoomable, pannable HTML5 Canvas with per-cell CP437 glyph rendering
+- **Tools** — paint, erase, eyedropper, rectangular selection, copy/paste
+- **File Formats** — `.tileregistry` (JSON) and `.terrain` (2-char tile codes, plain text)
+- **C# Import** — one-time migration tool to convert the existing `TileRegistry.cs` into the new format
+- **Fully Client-Side** — no server, no database, no auth. Everything runs in the browser.
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Layer | Technology |
+|-------|-----------|
+| Framework | React + TypeScript |
+| Build | Vite |
+| Canvas | HTML5 Canvas (2D) |
+| State | Zustand |
+| Styling | Tailwind CSS |
+| File I/O | Browser File API |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Getting Started
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Project Structure
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+├── components/    # React UI components
+├── store/         # Zustand state management
+├── rendering/     # Canvas rendering (atlas, tinting)
+├── io/            # File I/O (registry, terrain, C# importer)
+├── types/         # TypeScript type definitions
+└── utils/         # CP437 tables, .NET color lookup
+```
+
+## File Formats
+
+### `.tileregistry` (JSON)
+
+The tile registry — shared between TileForge and the game engine. Each tile has a 2-char code, CP437 glyph index, RGBA colors, and gameplay properties.
+
+### `.terrain` (plain text)
+
+Map files. Each row is a sequence of 2-char tile codes with no delimiters:
+
+```
+trtctrtctrtctrtc
+tctrtctrtctrtctr
+tr..........trtc
+tc....fl....tctc
+```
+
+## Docs
+
+See the [docs/](docs/) folder for the full technical design document, build phases, and UI wireframe.
