@@ -56,17 +56,13 @@ export function isAtlasReady(): boolean {
   return atlasReady
 }
 
+// Cache tinted glyphs: key = `${glyphIndex}:${fgColor}`
+const tintCache = new Map<string, OffscreenCanvas>()
+const MAX_CACHE = 2048
+
 /**
  * Draw a single glyph from the atlas onto a target context,
  * tinted to the given foreground color.
- *
- * @param ctx - target canvas 2D context
- * @param glyphIndex - CP437 index 0–255
- * @param dx - destination x on target canvas
- * @param dy - destination y on target canvas
- * @param dw - destination width (cell size at current zoom)
- * @param dh - destination height (cell size at current zoom)
- * @param fgColor - CSS color string for tinting
  */
 export function drawGlyph(
   ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
@@ -77,25 +73,27 @@ export function drawGlyph(
   dh: number,
   fgColor: string,
 ): void {
-  const atlas = getAtlas()
-  const col = glyphIndex % ATLAS_COLS
-  const row = Math.floor(glyphIndex / ATLAS_COLS)
-  const sx = col * CELL_W
-  const sy = row * CELL_H
+  const cacheKey = `${glyphIndex}:${fgColor}`
+  let tinted = tintCache.get(cacheKey)
 
-  // Use a small offscreen canvas for tinting
-  const tintCanvas = new OffscreenCanvas(CELL_W, CELL_H)
-  const tintCtx = tintCanvas.getContext('2d')!
+  if (!tinted) {
+    const atlas = getAtlas()
+    const col = glyphIndex % ATLAS_COLS
+    const row = Math.floor(glyphIndex / ATLAS_COLS)
+    const sx = col * CELL_W
+    const sy = row * CELL_H
 
-  // Draw the white glyph from atlas
-  tintCtx.clearRect(0, 0, CELL_W, CELL_H)
-  tintCtx.drawImage(atlas, sx, sy, CELL_W, CELL_H, 0, 0, CELL_W, CELL_H)
+    tinted = new OffscreenCanvas(CELL_W, CELL_H)
+    const tintCtx = tinted.getContext('2d')!
+    tintCtx.clearRect(0, 0, CELL_W, CELL_H)
+    tintCtx.drawImage(atlas, sx, sy, CELL_W, CELL_H, 0, 0, CELL_W, CELL_H)
+    tintCtx.globalCompositeOperation = 'source-atop'
+    tintCtx.fillStyle = fgColor
+    tintCtx.fillRect(0, 0, CELL_W, CELL_H)
 
-  // Tint: fill with fg color using source-atop to only color the glyph pixels
-  tintCtx.globalCompositeOperation = 'source-atop'
-  tintCtx.fillStyle = fgColor
-  tintCtx.fillRect(0, 0, CELL_W, CELL_H)
+    if (tintCache.size >= MAX_CACHE) tintCache.clear()
+    tintCache.set(cacheKey, tinted)
+  }
 
-  // Draw tinted glyph onto target
-  ctx.drawImage(tintCanvas, 0, 0, CELL_W, CELL_H, dx, dy, dw, dh)
+  ctx.drawImage(tinted, 0, 0, CELL_W, CELL_H, dx, dy, dw, dh)
 }

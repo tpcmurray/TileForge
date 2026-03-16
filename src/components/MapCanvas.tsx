@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from 'react'
+import { useRef, useEffect, useCallback, useState } from 'react'
 import { useStore } from '../store'
 import { buildAtlas } from '../rendering/atlas'
 import { renderMap } from '../rendering/renderer'
@@ -12,8 +12,13 @@ export function MapCanvas() {
   const isPanning = useRef(false)
   const lastMouse = useRef({ x: 0, y: 0 })
   const isPainting = useRef(false)
+  const isSelecting = useRef(false)
+  const selStart = useRef({ x: 0, y: 0 })
   const paintedCells = useRef<Set<string>>(new Set())
   const strokeChanges = useRef<{ x: number; y: number; before: string; after: string }[]>([])
+
+  const [pastePreview, setPastePreview] = useState<{ x: number; y: number } | null>(null)
+  const [pasteMode, setPasteMode] = useState(false)
 
   const {
     cells, tiles, mapWidth, mapHeight,
@@ -22,10 +27,39 @@ export function MapCanvas() {
     activeTool, activeTileCode,
     setCell, setActiveTile, setTool,
     pushOperation,
+    selection, setSelection, clipboard,
   } = useStore()
 
   // Build atlas once
   useEffect(() => { buildAtlas() }, [])
+
+  // Listen for paste mode activation
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      const ctrl = e.ctrlKey || e.metaKey
+
+      if (ctrl && e.key === 'c') {
+        e.preventDefault()
+        useStore.getState().copySelection()
+        return
+      }
+      if (ctrl && e.key === 'v') {
+        e.preventDefault()
+        if (useStore.getState().clipboard) {
+          setPasteMode(true)
+        }
+        return
+      }
+      if (e.key === 'Escape' && pasteMode) {
+        setPasteMode(false)
+        setPastePreview(null)
+        return
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [pasteMode])
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current
@@ -50,15 +84,17 @@ export function MapCanvas() {
       showGrid,
       canvasWidth: rect.width,
       canvasHeight: rect.height,
+      selection,
+      clipboard: pasteMode ? clipboard : null,
+      pastePreview: pasteMode ? pastePreview : null,
     })
-  }, [cells, tiles, mapWidth, mapHeight, zoom, panX, panY, showGrid])
+  }, [cells, tiles, mapWidth, mapHeight, zoom, panX, panY, showGrid, selection, clipboard, pasteMode, pastePreview])
 
   useEffect(() => {
     const id = requestAnimationFrame(draw)
     return () => cancelAnimationFrame(id)
   }, [draw])
 
-  // Resize observer
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
@@ -117,7 +153,7 @@ export function MapCanvas() {
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
-      // Middle-click or space+click: start pan
+      // Middle-click: pan
       if (e.button === 1) {
         isPanning.current = true
         lastMouse.current = { x: e.clientX, y: e.clientY }
@@ -125,23 +161,50 @@ export function MapCanvas() {
         return
       }
 
-      // Left-click: use tool
-      if (e.button === 0) {
+      // Right-click: pick tile under cursor
+      if (e.button === 2) {
         const cell = mouseToCell(e)
-        if (cell) {
-          isPainting.current = true
-          paintedCells.current.clear()
-          strokeChanges.current = []
-          applyTool(cell)
+        if (!cell) return
+        const code = cells[cell.y]?.[cell.x]
+        if (code && code !== '..') {
+          setActiveTile(code)
+          setTool('paint')
         }
+        return
       }
+
+      if (e.button !== 0) return
+      const cell = mouseToCell(e)
+      if (!cell) return
+
+      // Paste mode: click to stamp
+      if (pasteMode && clipboard) {
+        useStore.getState().paste(cell.x, cell.y)
+        setPasteMode(false)
+        setPastePreview(null)
+        return
+      }
+
+      // Shift+click: start selection
+      if (e.shiftKey) {
+        isSelecting.current = true
+        selStart.current = { x: cell.x, y: cell.y }
+        setSelection({ x: cell.x, y: cell.y, w: 1, h: 1 })
+        return
+      }
+
+      // Normal click: paint/erase/pick
+      setSelection(null)
+      isPainting.current = true
+      paintedCells.current.clear()
+      strokeChanges.current = []
+      applyTool(cell)
     },
-    [mouseToCell, applyTool],
+    [mouseToCell, applyTool, pasteMode, clipboard, setSelection, cells, setActiveTile, setTool],
   )
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent) => {
-      // Update cursor position in store for status bar
       const cell = mouseToCell(e)
       useStore.setState({
         _cursorX: cell?.x ?? -1,
@@ -156,16 +219,35 @@ export function MapCanvas() {
         return
       }
 
-      if (isPainting.current) {
-        if (cell) applyTool(cell)
+      // Update paste preview position
+      if (pasteMode && cell) {
+        setPastePreview(cell)
+      }
+
+      // Dragging selection
+      if (isSelecting.current && cell) {
+        const sx = Math.min(selStart.current.x, cell.x)
+        const sy = Math.min(selStart.current.y, cell.y)
+        const ex = Math.max(selStart.current.x, cell.x)
+        const ey = Math.max(selStart.current.y, cell.y)
+        setSelection({ x: sx, y: sy, w: ex - sx + 1, h: ey - sy + 1 })
+        return
+      }
+
+      if (isPainting.current && cell) {
+        applyTool(cell)
       }
     },
-    [mouseToCell, panX, panY, setPan, applyTool],
+    [mouseToCell, panX, panY, setPan, applyTool, pasteMode, setSelection],
   )
 
   const handleMouseUp = useCallback(() => {
     if (isPanning.current) {
       isPanning.current = false
+      return
+    }
+    if (isSelecting.current) {
+      isSelecting.current = false
       return
     }
     if (isPainting.current) {
@@ -187,16 +269,13 @@ export function MapCanvas() {
       const delta = e.deltaY > 0 ? -0.1 : 0.1
       const newZoom = Math.max(0.25, Math.min(4, zoom + delta))
 
-      // Zoom toward mouse cursor
       const canvas = canvasRef.current
       if (canvas) {
         const rect = canvas.getBoundingClientRect()
         const mx = e.clientX - rect.left
         const my = e.clientY - rect.top
         const scale = newZoom / zoom
-        const newPanX = mx - (mx - panX) * scale
-        const newPanY = my - (my - panY) * scale
-        setPan(newPanX, newPanY)
+        setPan(mx - (mx - panX) * scale, my - (my - panY) * scale)
       }
 
       setZoom(newZoom)
@@ -205,6 +284,12 @@ export function MapCanvas() {
   )
 
   const hasMap = mapWidth > 0 && mapHeight > 0
+
+  const cursor = pasteMode
+    ? 'copy'
+    : activeTool === 'pick'
+      ? 'crosshair'
+      : 'default'
 
   return (
     <div
@@ -216,7 +301,7 @@ export function MapCanvas() {
         <canvas
           ref={canvasRef}
           className="absolute inset-0 w-full h-full"
-          style={{ cursor: activeTool === 'pick' ? 'crosshair' : 'default' }}
+          style={{ cursor }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
@@ -247,6 +332,20 @@ export function MapCanvas() {
           }}
         >
           {Math.round(zoom * 100)}%
+        </div>
+      )}
+
+      {/* Paste mode hint */}
+      {pasteMode && (
+        <div
+          className="absolute top-3 left-1/2 -translate-x-1/2 font-mono text-[11px] px-3.5 py-1.5 rounded-full"
+          style={{
+            color: 'var(--text-dim)',
+            background: 'var(--bg-panel)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          Click to paste · Esc to cancel
         </div>
       )}
     </div>

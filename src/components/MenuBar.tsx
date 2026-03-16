@@ -54,6 +54,7 @@ export function MenuBar() {
         const knownCodes = new Set(store.getState().tiles.keys())
         const result = parseTerrain(text, knownCodes)
         store.getState().loadMap(result.cells, result.width, result.height)
+        store.getState().setMapFileHandle(handle)
         if (result.unknownCodes.size > 0) {
           alert(`Unknown tile codes: ${[...result.unknownCodes].join(', ')}`)
         }
@@ -61,12 +62,35 @@ export function MenuBar() {
     },
     {
       label: 'Save Map',
-      action: () => {
+      action: async () => {
+        setOpenMenu(null)
+        const { cells, mapFileHandle } = store.getState()
+        if (cells.length === 0) return
+        const text = serializeTerrain(cells)
+        if (mapFileHandle) {
+          await writeToHandle(mapFileHandle, text)
+        } else {
+          const handle = await saveWithPicker(text, 'map.terrain', [
+            { description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } },
+          ])
+          if (!handle) return
+          store.getState().setMapFileHandle(handle)
+        }
+        store.setState({ mapDirty: false })
+      },
+    },
+    {
+      label: 'Save Map As…',
+      action: async () => {
         setOpenMenu(null)
         const { cells } = store.getState()
         if (cells.length === 0) return
         const text = serializeTerrain(cells)
-        downloadFile(text, 'map.terrain', 'text/plain')
+        const handle = await saveWithPicker(text, 'map.terrain', [
+          { description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } },
+        ])
+        if (!handle) return
+        store.getState().setMapFileHandle(handle)
         store.setState({ mapDirty: false })
       },
     },
@@ -86,7 +110,7 @@ export function MenuBar() {
           alert('Registry errors:\n' + result.errors.map((e) => e.message).join('\n'))
         }
         store.getState().loadRegistry(result.tiles)
-        // Auto-select first tile
+        store.getState().setRegistryFileHandle(handle)
         if (result.tiles.length > 0) {
           store.getState().setActiveTile(result.tiles[0].code)
         }
@@ -94,12 +118,36 @@ export function MenuBar() {
     },
     {
       label: 'Save Registry',
-      action: () => {
+      action: async () => {
         setOpenMenu(null)
         const tiles = [...store.getState().tiles.values()]
         if (tiles.length === 0) return
         const json = serializeRegistry(tiles)
-        downloadFile(json, 'tiles.tileregistry', 'application/json')
+        const { registryFileHandle } = store.getState()
+        if (registryFileHandle) {
+          await writeToHandle(registryFileHandle, json)
+        } else {
+          const handle = await saveWithPicker(json, 'tiles.tileregistry', [
+            { description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } },
+          ])
+          if (!handle) return
+          store.getState().setRegistryFileHandle(handle)
+        }
+        store.setState({ registryDirty: false })
+      },
+    },
+    {
+      label: 'Save Registry As…',
+      action: async () => {
+        setOpenMenu(null)
+        const tiles = [...store.getState().tiles.values()]
+        if (tiles.length === 0) return
+        const json = serializeRegistry(tiles)
+        const handle = await saveWithPicker(json, 'tiles.tileregistry', [
+          { description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } },
+        ])
+        if (!handle) return
+        store.getState().setRegistryFileHandle(handle)
         store.setState({ registryDirty: false })
       },
     },
@@ -240,12 +288,24 @@ function DropdownMenu({ items }: { items: MenuItem[] }) {
   )
 }
 
-function downloadFile(content: string, filename: string, mime: string) {
-  const blob = new Blob([content], { type: mime })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = filename
-  a.click()
-  URL.revokeObjectURL(url)
+/** Write content to an existing file handle */
+async function writeToHandle(handle: FileSystemFileHandle, content: string) {
+  const writable = await handle.createWritable()
+  await writable.write(content)
+  await writable.close()
+}
+
+/** Prompt user for a save location and write content */
+async function saveWithPicker(
+  content: string,
+  suggestedName: string,
+  types: FilePickerAcceptType[],
+): Promise<FileSystemFileHandle | null> {
+  try {
+    const handle = await window.showSaveFilePicker({ suggestedName, types })
+    await writeToHandle(handle, content)
+    return handle
+  } catch {
+    return null // user cancelled
+  }
 }

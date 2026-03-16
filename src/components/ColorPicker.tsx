@@ -181,6 +181,43 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
           ))}
         </div>
 
+        {/* Hex RGB input */}
+        <div className="mb-3">
+          <label className="text-[10px] font-mono uppercase mb-1 block" style={{ color: 'var(--text-dim)' }}>
+            Hex
+          </label>
+          <input
+            type="text"
+            value={`#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`}
+            onChange={(e) => {
+              const parsed = parseHexColor(e.target.value)
+              if (!parsed) return
+              const [nr, ng, nb] = parsed
+              setR(nr); setG(ng); setB(nb)
+              setHue(rgbToHue(nr, ng, nb))
+              emit(nr, ng, nb, a)
+            }}
+            onPaste={(e) => {
+              const text = e.clipboardData.getData('text').trim()
+              const parsed = parseHexColor(text)
+              if (parsed) {
+                e.preventDefault()
+                const [nr, ng, nb] = parsed
+                setR(nr); setG(ng); setB(nb)
+                setHue(rgbToHue(nr, ng, nb))
+                emit(nr, ng, nb, a)
+              }
+            }}
+            className="w-full font-mono text-xs rounded px-2 py-1 outline-none"
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+            }}
+            spellCheck={false}
+          />
+        </div>
+
         {/* Preview + transparent button */}
         <div className="flex items-center gap-3">
           <div
@@ -236,6 +273,18 @@ function rgbToHue(r: number, g: number, b: number): number {
   else if (max === gn) h = (bn - rn) / d + 2
   else h = (rn - gn) / d + 4
   return Math.round(h * 60)
+}
+
+/** Parse hex color strings: #RGB, #RRGGBB, or without # */
+function parseHexColor(str: string): [number, number, number] | null {
+  const s = str.replace(/^#/, '').trim()
+  if (/^[0-9a-f]{6}$/i.test(s)) {
+    return [parseInt(s.slice(0, 2), 16), parseInt(s.slice(2, 4), 16), parseInt(s.slice(4, 6), 16)]
+  }
+  if (/^[0-9a-f]{3}$/i.test(s)) {
+    return [parseInt(s[0] + s[0], 16), parseInt(s[1] + s[1], 16), parseInt(s[2] + s[2], 16)]
+  }
+  return null
 }
 
 function hsvToRgb(h: number, s: number, v: number): [number, number, number] {

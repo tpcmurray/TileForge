@@ -51,6 +51,12 @@ export interface TileForgeState {
   setZoom: (zoom: number) => void
   setPan: (x: number, y: number) => void
   toggleGrid: () => void
+
+  // ── File Handles ──
+  mapFileHandle: FileSystemFileHandle | null
+  registryFileHandle: FileSystemFileHandle | null
+  setMapFileHandle: (h: FileSystemFileHandle | null) => void
+  setRegistryFileHandle: (h: FileSystemFileHandle | null) => void
 }
 
 export const useStore = create<TileForgeState>((set, get) => ({
@@ -253,4 +259,10 @@ export const useStore = create<TileForgeState>((set, get) => ({
   setZoom: (zoom) => set({ zoom: Math.max(0.25, Math.min(4, zoom)) }),
   setPan: (panX, panY) => set({ panX, panY }),
   toggleGrid: () => set((s) => ({ showGrid: !s.showGrid })),
+
+  // ── File Handles ──
+  mapFileHandle: null,
+  registryFileHandle: null,
+  setMapFileHandle: (h) => set({ mapFileHandle: h }),
+  setRegistryFileHandle: (h) => set({ registryFileHandle: h }),
 }))

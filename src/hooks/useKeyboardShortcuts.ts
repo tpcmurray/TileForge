@@ -1,10 +1,10 @@
 import { useEffect } from 'react'
 import { useStore } from '../store'
+import { serializeTerrain } from '../io/terrainFile'
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Don't capture when typing in inputs
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
 
       const ctrl = e.ctrlKey || e.metaKey
@@ -21,6 +21,48 @@ export function useKeyboardShortcuts() {
       if (ctrl && shift && e.key === 'Z') {
         e.preventDefault()
         useStore.getState().redo()
+        return
+      }
+
+      // Ctrl+S — Save map (reuses file handle if available)
+      if (ctrl && e.key === 's') {
+        e.preventDefault()
+        const { cells, mapFileHandle } = useStore.getState()
+        if (cells.length === 0) return
+        const text = serializeTerrain(cells)
+        if (mapFileHandle) {
+          mapFileHandle.createWritable().then(async (w) => {
+            await w.write(text)
+            await w.close()
+            useStore.setState({ mapDirty: false })
+          })
+        } else {
+          window.showSaveFilePicker({
+            suggestedName: 'map.terrain',
+            types: [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }],
+          }).then(async (handle) => {
+            const w = await handle.createWritable()
+            await w.write(text)
+            await w.close()
+            useStore.getState().setMapFileHandle(handle)
+            useStore.setState({ mapDirty: false })
+          }).catch(() => {})
+        }
+        return
+      }
+
+      // Ctrl+N — New map
+      if (ctrl && e.key === 'n') {
+        e.preventDefault()
+        const w = prompt('Map width (cells):', '30')
+        const h = prompt('Map height (cells):', '20')
+        if (w && h) {
+          const width = parseInt(w)
+          const height = parseInt(h)
+          if (width > 0 && height > 0) {
+            useStore.getState().clearMap(width, height, '..')
+          }
+        }
         return
       }
 
@@ -44,7 +86,7 @@ export function useKeyboardShortcuts() {
         return
       }
 
-      // Escape — clear selection
+      // Escape — clear selection / cancel paste mode
       if (e.key === 'Escape') {
         useStore.getState().setSelection(null)
         return
