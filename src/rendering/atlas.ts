@@ -1,7 +1,7 @@
 import { cp437ToUnicode } from '../utils/cp437'
 
-/** The cell size used for glyph rendering */
-export const CELL_W = 16
+/** The cell size used for glyph rendering (1:2 ratio matching 8×16 characters) */
+export const CELL_W = 8
 export const CELL_H = 16
 
 /** 16×16 grid = 256 glyphs */
@@ -28,7 +28,7 @@ export function buildAtlas(): void {
   ctx.fillStyle = '#ffffff'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  // Use a monospace font; browsers will fall back if not available
+  // Use a monospace font sized to fit the 8×16 cell; browsers will fall back
   ctx.font = `${CELL_H - 2}px "Courier New", "Consolas", monospace`
 
   for (let i = 0; i < 256; i++) {

@@ -245,6 +245,7 @@ function parseRegCall(argsStr: string): TileDefinition | null {
     code,
     name,
     glyph,
+    variants: [],
     fg,
     bg,
     walkable,

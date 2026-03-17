@@ -222,7 +222,7 @@ function PaletteTile({
     <div
       className="flex flex-col items-center justify-center rounded cursor-pointer border transition-all"
       style={{
-        aspectRatio: '1',
+        aspectRatio: '1/2',
         background: rgbaToCSS(tile.bg),
         borderColor: selected ? 'var(--accent)' : 'transparent',
         boxShadow: selected ? '0 0 0 1px var(--accent)' : 'none',

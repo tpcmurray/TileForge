@@ -47,8 +47,8 @@ export function ActiveTileDisplay() {
         <div
           className="flex items-center justify-center rounded text-[32px] font-mono shrink-0"
           style={{
-            width: 48,
-            height: 48,
+            width: 32,
+            height: 64,
             background: rgbaToCSS(tile.bg),
             color: rgbaToCSS(tile.fg),
           }}
@@ -65,6 +65,7 @@ export function ActiveTileDisplay() {
           </div>
           <div style={{ color: 'var(--text-dim)', fontSize: 10 }}>
             CP437 #{tile.glyph} · {glyphNameStr}
+            {tile.variants && tile.variants.length > 0 && ` + ${tile.variants.length} variant${tile.variants.length > 1 ? 's' : ''}`}
           </div>
           <div style={{ color: 'var(--text-dim)', fontSize: 10 }}>
             Click to edit tile

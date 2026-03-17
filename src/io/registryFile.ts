@@ -51,9 +51,18 @@ function validateTile(tile: unknown, index: number, seenCodes: Set<string>): Reg
     errors.push({ message: `Tile ${index}: name must be a string`, tileIndex: index })
   }
 
-  // glyph
-  if (typeof t.glyph !== 'number' || t.glyph < 0 || t.glyph > 255 || !Number.isInteger(t.glyph)) {
-    errors.push({ message: `Tile ${index}: glyph must be an integer 0–255`, tileIndex: index })
+  // glyph — number (legacy) or string like "176-34@5-39@5"
+  if (typeof t.glyph === 'number') {
+    if (t.glyph < 0 || t.glyph > 255 || !Number.isInteger(t.glyph)) {
+      errors.push({ message: `Tile ${index}: glyph must be an integer 0–255`, tileIndex: index })
+    }
+  } else if (typeof t.glyph === 'string') {
+    const parsed = parseGlyphString(t.glyph)
+    if (!parsed) {
+      errors.push({ message: `Tile ${index}: invalid glyph format "${t.glyph}"`, tileIndex: index })
+    }
+  } else {
+    errors.push({ message: `Tile ${index}: glyph must be a number or string`, tileIndex: index })
   }
 
   // colors
@@ -114,20 +123,26 @@ export function parseRegistry(json: string): RegistryParseResult {
     errors.push(...tileErrors)
 
     if (tileErrors.length === 0) {
-      const t = file.tiles[i] as TileDefinition
+      const t = file.tiles[i] as Record<string, unknown>
+      const glyphData = typeof t.glyph === 'string'
+        ? parseGlyphString(t.glyph)!
+        : { glyph: t.glyph as number, variants: [] }
+      const fg = t.fg as TileDefinition['fg']
+      const bg = t.bg as TileDefinition['bg']
       tiles.push({
-        code: t.code,
-        name: t.name,
-        glyph: t.glyph,
-        fg: { r: t.fg.r, g: t.fg.g, b: t.fg.b, a: t.fg.a },
-        bg: { r: t.bg.r, g: t.bg.g, b: t.bg.b, a: t.bg.a },
-        walkable: t.walkable,
-        transparent: t.transparent,
-        lightPass: t.lightPass,
-        above: t.above ?? false,
-        speedMod: t.speedMod,
-        lightRadius: t.lightRadius,
-        ...(t.category ? { category: t.category } : {}),
+        code: t.code as string,
+        name: t.name as string,
+        glyph: glyphData.glyph,
+        variants: glyphData.variants,
+        fg: { r: fg.r, g: fg.g, b: fg.b, a: fg.a },
+        bg: { r: bg.r, g: bg.g, b: bg.b, a: bg.a },
+        walkable: t.walkable as boolean,
+        transparent: t.transparent as boolean,
+        lightPass: t.lightPass as boolean,
+        above: (t.above as boolean) ?? false,
+        speedMod: t.speedMod as number,
+        lightRadius: t.lightRadius as number,
+        ...(t.category ? { category: t.category as string } : {}),
       })
     }
   }
@@ -137,12 +152,12 @@ export function parseRegistry(json: string): RegistryParseResult {
 
 /** Serialize a TileDefinition[] to .tileregistry JSON string */
 export function serializeRegistry(tiles: TileDefinition[]): string {
-  const file: TileRegistryFile = {
+  const file = {
     version: 1,
     tiles: tiles.map((t) => ({
       code: t.code,
       name: t.name,
-      glyph: t.glyph,
+      glyph: serializeGlyphString(t.glyph, t.variants),
       fg: { ...t.fg },
       bg: { ...t.bg },
       walkable: t.walkable,
@@ -155,4 +170,29 @@ export function serializeRegistry(tiles: TileDefinition[]): string {
     })),
   }
   return JSON.stringify(file, null, 2)
+}
+
+/** Parse glyph string like "176-34@5-39@5" → { glyph, variants } */
+function parseGlyphString(s: string): { glyph: number; variants: { glyph: number; percent: number }[] } | null {
+  const parts = s.split('-')
+  const defaultGlyph = parseInt(parts[0])
+  if (isNaN(defaultGlyph) || defaultGlyph < 0 || defaultGlyph > 255) return null
+
+  const variants: { glyph: number; percent: number }[] = []
+  for (let i = 1; i < parts.length; i++) {
+    const match = parts[i].match(/^(\d+)@(\d+)$/)
+    if (!match) return null
+    const g = parseInt(match[1])
+    const p = parseInt(match[2])
+    if (g < 0 || g > 255 || p < 1 || p > 100) return null
+    variants.push({ glyph: g, percent: p })
+  }
+
+  return { glyph: defaultGlyph, variants }
+}
+
+/** Serialize glyph + variants to string format */
+function serializeGlyphString(glyph: number, variants: { glyph: number; percent: number }[]): string {
+  if (!variants || variants.length === 0) return String(glyph)
+  return `${glyph}-${variants.map((v) => `${v.glyph}@${v.percent}`).join('-')}`
 }

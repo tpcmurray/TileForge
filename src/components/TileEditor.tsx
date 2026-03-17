@@ -26,8 +26,10 @@ export function TileEditor({ tile, existingCodes, onSave, onClose }: TileEditorP
   const [above, setAbove] = useState(tile?.above ?? false)
   const [speedMod, setSpeedMod] = useState(tile?.speedMod ?? 1.0)
   const [lightRadius, setLightRadius] = useState(tile?.lightRadius ?? 0)
+  const [variants, setVariants] = useState<{ glyph: number; percent: number }[]>(tile?.variants ?? [])
 
   const [showCP437, setShowCP437] = useState(false)
+  const [variantCP437Index, setVariantCP437Index] = useState<number | null>(null)
   const [colorTarget, setColorTarget] = useState<'fg' | 'bg' | null>(null)
 
   const codeError =
@@ -40,7 +42,7 @@ export function TileEditor({ tile, existingCodes, onSave, onClose }: TileEditorP
   const handleSave = () => {
     if (codeError) return
     onSave(
-      { code, name, glyph, fg, bg, walkable, transparent, lightPass, above, speedMod, lightRadius },
+      { code, name, glyph, variants, fg, bg, walkable, transparent, lightPass, above, speedMod, lightRadius },
       tile?.code ?? null,
     )
   }
@@ -84,9 +86,9 @@ export function TileEditor({ tile, existingCodes, onSave, onClose }: TileEditorP
             <div
               className="flex items-center justify-center rounded-lg font-mono mb-4 mx-auto"
               style={{
-                width: 80,
-                height: 80,
-                fontSize: 48,
+                width: 48,
+                height: 96,
+                fontSize: 40,
                 background: rgbaToCSS(bg),
                 color: rgbaToCSS(fg),
                 border: '1px solid var(--border)',
@@ -145,6 +147,69 @@ export function TileEditor({ tile, existingCodes, onSave, onClose }: TileEditorP
               <span className="font-mono text-[11px] ml-2" style={{ color: 'var(--text-dim)' }}>
                 CP437 #{glyph}
               </span>
+            </Row>
+
+            {/* Glyph Variants */}
+            <Row label="Variants">
+              <div className="flex flex-col gap-1.5 flex-1">
+                {variants.map((v, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <button
+                      className="flex items-center justify-center font-mono text-sm rounded cursor-pointer shrink-0"
+                      style={{
+                        width: 28,
+                        height: 28,
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                      }}
+                      onClick={() => setVariantCP437Index(i)}
+                    >
+                      {cp437ToUnicode(v.glyph)}
+                    </button>
+                    <span className="font-mono text-[10px] shrink-0" style={{ color: 'var(--text-dim)' }}>
+                      #{v.glyph}
+                    </span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={v.percent}
+                      onChange={(e) => {
+                        const updated = [...variants]
+                        updated[i] = { ...v, percent: Math.max(1, Math.min(100, parseInt(e.target.value) || 1)) }
+                        setVariants(updated)
+                      }}
+                      className="font-mono text-center text-[11px] rounded px-1 py-0.5 outline-none"
+                      style={{
+                        width: 44,
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text)',
+                      }}
+                    />
+                    <span className="text-[10px]" style={{ color: 'var(--text-dim)' }}>%</span>
+                    <button
+                      className="text-[11px] px-1.5 py-0.5 rounded cursor-pointer"
+                      style={{ color: 'var(--red)', background: 'none', border: 'none' }}
+                      onClick={() => setVariants(variants.filter((_, j) => j !== i))}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                <button
+                  className="text-[11px] px-2 py-1 rounded cursor-pointer self-start"
+                  style={{
+                    background: 'transparent',
+                    border: '1px dashed var(--border-light)',
+                    color: 'var(--text-dim)',
+                  }}
+                  onClick={() => setVariants([...variants, { glyph: 1, percent: 5 }])}
+                >
+                  + Add Variant
+                </button>
+              </div>
             </Row>
 
             {/* Foreground */}
@@ -268,6 +333,18 @@ export function TileEditor({ tile, existingCodes, onSave, onClose }: TileEditorP
           currentGlyph={glyph}
           onSelect={(g) => { setGlyph(g); setShowCP437(false) }}
           onClose={() => setShowCP437(false)}
+        />
+      )}
+      {variantCP437Index !== null && (
+        <CP437Dialog
+          currentGlyph={variants[variantCP437Index]?.glyph ?? 0}
+          onSelect={(g) => {
+            const updated = [...variants]
+            updated[variantCP437Index] = { ...updated[variantCP437Index], glyph: g }
+            setVariants(updated)
+            setVariantCP437Index(null)
+          }}
+          onClose={() => setVariantCP437Index(null)}
         />
       )}
       {colorTarget === 'fg' && (

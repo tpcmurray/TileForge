@@ -12,8 +12,10 @@ export interface TileDefinition {
   code: string
   /** Human-readable label */
   name: string
-  /** Code Page 437 glyph index (0–255) */
+  /** Code Page 437 glyph index (0–255), the default glyph */
   glyph: number
+  /** Variant glyphs with percentage chance of appearing instead of default */
+  variants: { glyph: number; percent: number }[]
   /** Foreground color */
   fg: RGBA
   /** Background color (a: 0 = transparent) */

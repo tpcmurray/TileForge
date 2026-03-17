@@ -3,8 +3,9 @@ import { useStore } from '../store'
 import { buildAtlas } from '../rendering/atlas'
 import { renderMap } from '../rendering/renderer'
 
-/** Base cell size in pixels at zoom 1.0 */
-const BASE_CELL = 24
+/** Base cell size in pixels at zoom 1.0 (1:2 ratio matching 8×16 characters) */
+const BASE_CELL_W = 16
+const BASE_CELL_H = 32
 
 export function MapCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -78,7 +79,8 @@ export function MapCanvas() {
       tiles,
       mapWidth,
       mapHeight,
-      cellSize: BASE_CELL * zoom,
+      cellW: BASE_CELL_W * zoom,
+      cellH: BASE_CELL_H * zoom,
       panX,
       panY,
       showGrid,
@@ -109,11 +111,12 @@ export function MapCanvas() {
       const canvas = canvasRef.current
       if (!canvas) return null
       const rect = canvas.getBoundingClientRect()
-      const cellSize = BASE_CELL * zoom
+      const cw = BASE_CELL_W * zoom
+      const ch = BASE_CELL_H * zoom
       const mx = e.clientX - rect.left
       const my = e.clientY - rect.top
-      const col = Math.floor((mx - panX) / cellSize)
-      const row = Math.floor((my - panY) / cellSize)
+      const col = Math.floor((mx - panX) / cw)
+      const row = Math.floor((my - panY) / ch)
       if (col < 0 || col >= mapWidth || row < 0 || row >= mapHeight) return null
       return { x: col, y: row }
     },

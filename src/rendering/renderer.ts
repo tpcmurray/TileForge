@@ -7,7 +7,8 @@ export interface RenderOptions {
   tiles: Map<string, TileDefinition>
   mapWidth: number
   mapHeight: number
-  cellSize: number
+  cellW: number
+  cellH: number
   panX: number
   panY: number
   showGrid: boolean
@@ -16,6 +17,23 @@ export interface RenderOptions {
   selection?: Selection | null
   clipboard?: string[][] | null
   pastePreview?: { x: number; y: number } | null
+}
+
+/** Deterministic hash for stable random variant selection per cell */
+function cellRand(col: number, row: number): number {
+  return Math.abs((col * 7919 + row * 104729 + col * row * 31) % 100)
+}
+
+/** Pick which glyph to draw for a tile at a given cell position */
+function pickGlyph(tile: TileDefinition, col: number, row: number): number {
+  if (!tile.variants || tile.variants.length === 0) return tile.glyph
+  const rand = cellRand(col, row)
+  let cumulative = 0
+  for (const v of tile.variants) {
+    cumulative += v.percent
+    if (rand < cumulative) return v.glyph
+  }
+  return tile.glyph
 }
 
 /**
@@ -28,7 +46,7 @@ export function renderMap(
 ): void {
   const {
     cells, tiles, mapWidth, mapHeight,
-    cellSize, panX, panY, showGrid,
+    cellW, cellH, panX, panY, showGrid,
     canvasWidth, canvasHeight,
     selection, clipboard, pastePreview,
   } = opts
@@ -38,37 +56,38 @@ export function renderMap(
   if (mapWidth === 0 || mapHeight === 0) return
 
   // Visible cell range
-  const startCol = Math.max(0, Math.floor(-panX / cellSize))
-  const startRow = Math.max(0, Math.floor(-panY / cellSize))
-  const endCol = Math.min(mapWidth, Math.ceil((canvasWidth - panX) / cellSize))
-  const endRow = Math.min(mapHeight, Math.ceil((canvasHeight - panY) / cellSize))
+  const startCol = Math.max(0, Math.floor(-panX / cellW))
+  const startRow = Math.max(0, Math.floor(-panY / cellH))
+  const endCol = Math.min(mapWidth, Math.ceil((canvasWidth - panX) / cellW))
+  const endRow = Math.min(mapHeight, Math.ceil((canvasHeight - panY) / cellH))
 
   // Draw cells
   for (let row = startRow; row < endRow; row++) {
     for (let col = startCol; col < endCol; col++) {
-      const x = panX + col * cellSize
-      const y = panY + row * cellSize
+      const x = panX + col * cellW
+      const y = panY + row * cellH
       const code = cells[row]?.[col]
       const tile = code ? tiles.get(code) : undefined
 
       if (tile) {
         if (tile.bg.a === 0) {
-          drawCheckerboard(ctx, x, y, cellSize, cellSize)
+          drawCheckerboard(ctx, x, y, cellW, cellH)
         } else {
           ctx.fillStyle = rgbaToCSS(tile.bg)
-          ctx.fillRect(x, y, cellSize, cellSize)
+          ctx.fillRect(x, y, cellW, cellH)
         }
-        if (tile.glyph > 0) {
-          drawGlyph(ctx, tile.glyph, x, y, cellSize, cellSize, rgbaToCSS(tile.fg))
+        const g = pickGlyph(tile, col, row)
+        if (g > 0) {
+          drawGlyph(ctx, g, x, y, cellW, cellH, rgbaToCSS(tile.fg))
         }
       } else {
         ctx.fillStyle = '#ff00ff'
-        ctx.fillRect(x, y, cellSize, cellSize)
+        ctx.fillRect(x, y, cellW, cellH)
         ctx.fillStyle = '#ffffff'
-        ctx.font = `${Math.max(8, cellSize * 0.6)}px monospace`
+        ctx.font = `${Math.max(8, cellH * 0.6)}px monospace`
         ctx.textAlign = 'center'
         ctx.textBaseline = 'middle'
-        ctx.fillText('?', x + cellSize / 2, y + cellSize / 2)
+        ctx.fillText('?', x + cellW / 2, y + cellH / 2)
       }
     }
   }
@@ -79,24 +98,24 @@ export function renderMap(
     ctx.lineWidth = 1
     ctx.beginPath()
     for (let col = startCol; col <= endCol; col++) {
-      const x = Math.round(panX + col * cellSize) + 0.5
-      ctx.moveTo(x, panY + startRow * cellSize)
-      ctx.lineTo(x, panY + endRow * cellSize)
+      const x = Math.round(panX + col * cellW) + 0.5
+      ctx.moveTo(x, panY + startRow * cellH)
+      ctx.lineTo(x, panY + endRow * cellH)
     }
     for (let row = startRow; row <= endRow; row++) {
-      const y = Math.round(panY + row * cellSize) + 0.5
-      ctx.moveTo(panX + startCol * cellSize, y)
-      ctx.lineTo(panX + endCol * cellSize, y)
+      const y = Math.round(panY + row * cellH) + 0.5
+      ctx.moveTo(panX + startCol * cellW, y)
+      ctx.lineTo(panX + endCol * cellW, y)
     }
     ctx.stroke()
   }
 
   // Selection overlay
   if (selection && selection.w > 0 && selection.h > 0) {
-    const sx = panX + selection.x * cellSize
-    const sy = panY + selection.y * cellSize
-    const sw = selection.w * cellSize
-    const sh = selection.h * cellSize
+    const sx = panX + selection.x * cellW
+    const sy = panY + selection.y * cellH
+    const sw = selection.w * cellW
+    const sh = selection.h * cellH
 
     ctx.fillStyle = 'rgba(74, 158, 255, 0.12)'
     ctx.fillRect(sx, sy, sw, sh)
@@ -117,15 +136,16 @@ export function renderMap(
         const cx = px + dx
         const cy = py + dy
         if (cx < 0 || cx >= mapWidth || cy < 0 || cy >= mapHeight) continue
-        const x = panX + cx * cellSize
-        const y = panY + cy * cellSize
+        const x = panX + cx * cellW
+        const y = panY + cy * cellH
         const code = clipboard[dy][dx]
         const tile = tiles.get(code)
         if (tile) {
           ctx.fillStyle = rgbaToCSS(tile.bg)
-          ctx.fillRect(x, y, cellSize, cellSize)
-          if (tile.glyph > 0) {
-            drawGlyph(ctx, tile.glyph, x, y, cellSize, cellSize, rgbaToCSS(tile.fg))
+          ctx.fillRect(x, y, cellW, cellH)
+          const g = pickGlyph(tile, cx, cy)
+          if (g > 0) {
+            drawGlyph(ctx, g, x, y, cellW, cellH, rgbaToCSS(tile.fg))
           }
         }
       }
@@ -133,10 +153,10 @@ export function renderMap(
     ctx.globalAlpha = 1.0
 
     // Outline around paste region
-    const gx = panX + px * cellSize
-    const gy = panY + py * cellSize
-    const gw = clipboard[0].length * cellSize
-    const gh = clipboard.length * cellSize
+    const gx = panX + px * cellW
+    const gy = panY + py * cellH
+    const gw = clipboard[0].length * cellW
+    const gh = clipboard.length * cellH
     ctx.strokeStyle = 'rgba(255, 170, 51, 0.8)'
     ctx.lineWidth = 2
     ctx.setLineDash([4, 4])
