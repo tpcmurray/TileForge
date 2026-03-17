@@ -3,15 +3,25 @@ import { useStore } from '../store'
 import { parseRegistry, serializeRegistry } from '../io/registryFile'
 import { parseTerrain, serializeTerrain } from '../io/terrainFile'
 import { importCSharpRegistry } from '../io/csharpImporter'
+import { getRecentFiles, addRecentFile, clearRecentFiles } from '../utils/recentFiles'
+import type { RecentEntry } from '../utils/recentFiles'
 
 interface MenuItem {
   label: string
   action: () => void
+  dim?: boolean
 }
 
 export function MenuBar() {
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+  const [recentFiles, setRecentFiles] = useState<RecentEntry[]>([])
   const menuRef = useRef<HTMLDivElement>(null)
+
+  const refreshRecent = () => { getRecentFiles().then(setRecentFiles) }
+
+  useEffect(() => {
+    refreshRecent()
+  }, [])
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -24,6 +34,11 @@ export function MenuBar() {
   }, [])
 
   const store = useStore
+
+  /** Record a file handle as recently used and refresh the list */
+  const recordRecent = (name: string, kind: 'map' | 'registry', handle: FileSystemFileHandle) => {
+    addRecentFile(name, kind, handle).then(refreshRecent)
+  }
 
   const fileItems: MenuItem[] = [
     {
@@ -55,6 +70,7 @@ export function MenuBar() {
         const result = parseTerrain(text, knownCodes)
         store.getState().loadMap(result.cells, result.width, result.height)
         store.getState().setMapFileHandle(handle)
+        recordRecent(file.name, 'map', handle)
         if (result.unknownCodes.size > 0) {
           alert(`Unknown tile codes: ${[...result.unknownCodes].join(', ')}`)
         }
@@ -69,12 +85,14 @@ export function MenuBar() {
         const text = serializeTerrain(cells)
         if (mapFileHandle) {
           await writeToHandle(mapFileHandle, text)
+          recordRecent((await mapFileHandle.getFile()).name, 'map', mapFileHandle)
         } else {
           const handle = await saveWithPicker(text, 'map.terrain', [
             { description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } },
           ])
           if (!handle) return
           store.getState().setMapFileHandle(handle)
+          recordRecent((await handle.getFile()).name, 'map', handle)
         }
         store.setState({ mapDirty: false })
       },
@@ -91,6 +109,7 @@ export function MenuBar() {
         ])
         if (!handle) return
         store.getState().setMapFileHandle(handle)
+        recordRecent((await handle.getFile()).name, 'map', handle)
         store.setState({ mapDirty: false })
       },
     },
@@ -111,6 +130,7 @@ export function MenuBar() {
         }
         store.getState().loadRegistry(result.tiles)
         store.getState().setRegistryFileHandle(handle)
+        recordRecent(file.name, 'registry', handle)
         if (result.tiles.length > 0) {
           store.getState().setActiveTile(result.tiles[0].code)
         }
@@ -126,12 +146,14 @@ export function MenuBar() {
         const { registryFileHandle } = store.getState()
         if (registryFileHandle) {
           await writeToHandle(registryFileHandle, json)
+          recordRecent((await registryFileHandle.getFile()).name, 'registry', registryFileHandle)
         } else {
           const handle = await saveWithPicker(json, 'tiles.tileregistry', [
             { description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } },
           ])
           if (!handle) return
           store.getState().setRegistryFileHandle(handle)
+          recordRecent((await handle.getFile()).name, 'registry', handle)
         }
         store.setState({ registryDirty: false })
       },
@@ -148,6 +170,7 @@ export function MenuBar() {
         ])
         if (!handle) return
         store.getState().setRegistryFileHandle(handle)
+        recordRecent((await handle.getFile()).name, 'registry', handle)
         store.setState({ registryDirty: false })
       },
     },
@@ -173,6 +196,76 @@ export function MenuBar() {
       },
     },
   ]
+
+  // Build recent files section
+  const recentMaps = recentFiles.filter((e) => e.kind === 'map')
+  const recentRegistries = recentFiles.filter((e) => e.kind === 'registry')
+
+  const openRecentMap = (entry: RecentEntry) => async () => {
+    setOpenMenu(null)
+    try {
+      const perm = await entry.handle.requestPermission({ mode: 'readwrite' })
+      if (perm !== 'granted') return
+      const file = await entry.handle.getFile()
+      const text = await file.text()
+      const knownCodes = new Set(store.getState().tiles.keys())
+      const result = parseTerrain(text, knownCodes)
+      store.getState().loadMap(result.cells, result.width, result.height)
+      store.getState().setMapFileHandle(entry.handle)
+      recordRecent(file.name, 'map', entry.handle)
+      if (result.unknownCodes.size > 0) {
+        alert(`Unknown tile codes: ${[...result.unknownCodes].join(', ')}`)
+      }
+    } catch {
+      alert(`Could not open ${entry.name}. The file may have been moved or deleted.`)
+    }
+  }
+
+  const openRecentRegistry = (entry: RecentEntry) => async () => {
+    setOpenMenu(null)
+    try {
+      const perm = await entry.handle.requestPermission({ mode: 'readwrite' })
+      if (perm !== 'granted') return
+      const file = await entry.handle.getFile()
+      const json = await file.text()
+      const result = parseRegistry(json)
+      if (result.errors.length > 0) {
+        alert('Registry errors:\n' + result.errors.map((e) => e.message).join('\n'))
+      }
+      store.getState().loadRegistry(result.tiles)
+      store.getState().setRegistryFileHandle(entry.handle)
+      recordRecent(file.name, 'registry', entry.handle)
+      if (result.tiles.length > 0) {
+        store.getState().setActiveTile(result.tiles[0].code)
+      }
+    } catch {
+      alert(`Could not open ${entry.name}. The file may have been moved or deleted.`)
+    }
+  }
+
+  if (recentMaps.length > 0 || recentRegistries.length > 0) {
+    fileItems.push({ label: '—', action: () => {} })
+    if (recentMaps.length > 0) {
+      fileItems.push({ label: 'Recent Maps', action: () => {}, dim: true })
+      for (const entry of recentMaps) {
+        fileItems.push({ label: `  ${entry.name}`, action: openRecentMap(entry) })
+      }
+    }
+    if (recentRegistries.length > 0) {
+      fileItems.push({ label: 'Recent Registries', action: () => {}, dim: true })
+      for (const entry of recentRegistries) {
+        fileItems.push({ label: `  ${entry.name}`, action: openRecentRegistry(entry) })
+      }
+    }
+    fileItems.push({ label: '—', action: () => {} })
+    fileItems.push({
+      label: 'Clear Recent Files',
+      action: () => {
+        clearRecentFiles().then(refreshRecent)
+        setOpenMenu(null)
+      },
+    })
+  }
 
   const viewItems: MenuItem[] = [
     {
@@ -252,12 +345,14 @@ export function MenuBar() {
 function DropdownMenu({ items }: { items: MenuItem[] }) {
   return (
     <div
-      className="absolute top-full left-0 mt-0.5 py-1 rounded-md min-w-[180px]"
+      className="absolute top-full left-0 mt-0.5 py-1 rounded-md min-w-[220px]"
       style={{
         background: 'var(--bg-panel)',
         border: '1px solid var(--border-light)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
         zIndex: 100,
+        maxHeight: 420,
+        overflowY: 'auto',
       }}
     >
       {items.map((item, i) =>
@@ -267,10 +362,18 @@ function DropdownMenu({ items }: { items: MenuItem[] }) {
             className="my-1 mx-2"
             style={{ height: 1, background: 'var(--border)' }}
           />
+        ) : item.dim ? (
+          <div
+            key={i}
+            className="px-3 pt-2 pb-1 text-[10px] font-mono uppercase"
+            style={{ color: 'var(--text-dim)' }}
+          >
+            {item.label}
+          </div>
         ) : (
           <div
             key={i}
-            className="px-3 py-1.5 text-xs cursor-pointer rounded mx-1"
+            className="px-3 py-1.5 text-xs cursor-pointer rounded mx-1 truncate"
             style={{ color: 'var(--text)' }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--bg-hover)'

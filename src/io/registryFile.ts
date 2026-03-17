@@ -66,6 +66,10 @@ function validateTile(tile: unknown, index: number, seenCodes: Set<string>): Reg
       errors.push({ message: `Tile ${index}: ${field} must be a boolean`, tileIndex: index })
     }
   }
+  // above is optional for backwards compat
+  if (t.above !== undefined && typeof t.above !== 'boolean') {
+    errors.push({ message: `Tile ${index}: above must be a boolean`, tileIndex: index })
+  }
 
   // numbers
   if (typeof t.speedMod !== 'number') {
@@ -120,6 +124,7 @@ export function parseRegistry(json: string): RegistryParseResult {
         walkable: t.walkable,
         transparent: t.transparent,
         lightPass: t.lightPass,
+        above: t.above ?? false,
         speedMod: t.speedMod,
         lightRadius: t.lightRadius,
         ...(t.category ? { category: t.category } : {}),
@@ -143,6 +148,7 @@ export function serializeRegistry(tiles: TileDefinition[]): string {
       walkable: t.walkable,
       transparent: t.transparent,
       lightPass: t.lightPass,
+      above: t.above,
       speedMod: t.speedMod,
       lightRadius: t.lightRadius,
       ...(t.category ? { category: t.category } : {}),

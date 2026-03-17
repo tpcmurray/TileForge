@@ -24,6 +24,8 @@ export interface TileDefinition {
   transparent: boolean
   /** Does light propagate through */
   lightPass: boolean
+  /** Renders above the player (e.g. tree canopy) */
+  above: boolean
   /** Movement speed multiplier (1.0 = normal) */
   speedMod: number
   /** Light emission radius (0 = none) */

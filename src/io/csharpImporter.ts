@@ -228,6 +228,7 @@ function parseRegCall(argsStr: string): TileDefinition | null {
   // Named optional params
   let speedMod = 1.0
   let lightRadius = 0
+  let above = false
 
   for (let i = 5; i < args.length; i++) {
     const named = args[i].match(/(\w+)\s*:\s*(.+)/)
@@ -236,6 +237,7 @@ function parseRegCall(argsStr: string): TileDefinition | null {
       const val = named[2].trim()
       if (key === 'speedmod') speedMod = parseFloat(val) || 1.0
       else if (key === 'lightradius') lightRadius = parseInt(val) || 0
+      else if (key === 'above') above = val.toLowerCase() === 'true'
     }
   }
 
@@ -248,6 +250,7 @@ function parseRegCall(argsStr: string): TileDefinition | null {
     walkable,
     transparent,
     lightPass,
+    above,
     speedMod,
     lightRadius,
   }

@@ -23,6 +23,7 @@ export function TileEditor({ tile, existingCodes, onSave, onClose }: TileEditorP
   const [walkable, setWalkable] = useState(tile?.walkable ?? true)
   const [transparent, setTransparent] = useState(tile?.transparent ?? true)
   const [lightPass, setLightPass] = useState(tile?.lightPass ?? true)
+  const [above, setAbove] = useState(tile?.above ?? false)
   const [speedMod, setSpeedMod] = useState(tile?.speedMod ?? 1.0)
   const [lightRadius, setLightRadius] = useState(tile?.lightRadius ?? 0)
 
@@ -39,7 +40,7 @@ export function TileEditor({ tile, existingCodes, onSave, onClose }: TileEditorP
   const handleSave = () => {
     if (codeError) return
     onSave(
-      { code, name, glyph, fg, bg, walkable, transparent, lightPass, speedMod, lightRadius },
+      { code, name, glyph, fg, bg, walkable, transparent, lightPass, above, speedMod, lightRadius },
       tile?.code ?? null,
     )
   }
@@ -185,9 +186,13 @@ export function TileEditor({ tile, existingCodes, onSave, onClose }: TileEditorP
                 <input type="checkbox" checked={transparent} onChange={(e) => setTransparent(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
                 Transparent
               </label>
-              <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: 'var(--text)' }}>
+              <label className="flex items-center gap-1.5 text-xs cursor-pointer mr-4" style={{ color: 'var(--text)' }}>
                 <input type="checkbox" checked={lightPass} onChange={(e) => setLightPass(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
                 Light Pass
+              </label>
+              <label className="flex items-center gap-1.5 text-xs cursor-pointer" style={{ color: 'var(--text)' }}>
+                <input type="checkbox" checked={above} onChange={(e) => setAbove(e.target.checked)} style={{ accentColor: 'var(--accent)' }} />
+                Above
               </label>
             </Row>
 
