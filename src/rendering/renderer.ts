@@ -17,6 +17,7 @@ export interface RenderOptions {
   selection?: Selection | null
   clipboard?: string[][] | null
   pastePreview?: { x: number; y: number } | null
+  playerOverlayPos?: { x: number; y: number } | null
 }
 
 /** Deterministic hash for stable random variant selection per cell */
@@ -161,6 +162,40 @@ export function renderMap(
     ctx.lineWidth = 2
     ctx.setLineDash([4, 4])
     ctx.strokeRect(gx, gy, gw, gh)
+    ctx.setLineDash([])
+  }
+
+  // Player overlay (3×3 grid of CP437 glyphs)
+  if (opts.playerOverlayPos) {
+    const { x: px, y: py } = opts.playerOverlayPos
+    // CP437 indices: 0 = skip (transparent cell)
+    const PLAYER: number[][] = [
+      [0, 229, 0],   //   σ
+      [47, 79, 92],   // /O\
+      [0, 208, 0],    //   ╨
+    ]
+    const fg = 'rgba(255, 255, 100, 0.9)'
+    ctx.globalAlpha = 0.85
+    for (let dy = 0; dy < 3; dy++) {
+      for (let dx = 0; dx < 3; dx++) {
+        const glyph = PLAYER[dy][dx]
+        if (glyph === 0) continue
+        const cx = px + dx
+        const cy = py + dy
+        const x = panX + cx * cellW
+        const y = panY + cy * cellH
+        drawGlyph(ctx, glyph, x, y, cellW, cellH, fg)
+      }
+    }
+    ctx.globalAlpha = 1.0
+
+    // Outline around player
+    const ox = panX + px * cellW
+    const oy = panY + py * cellH
+    ctx.strokeStyle = 'rgba(255, 255, 100, 0.6)'
+    ctx.lineWidth = 2
+    ctx.setLineDash([4, 3])
+    ctx.strokeRect(ox, oy, cellW * 3, cellH * 3)
     ctx.setLineDash([])
   }
 }

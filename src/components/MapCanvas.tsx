@@ -25,10 +25,11 @@ export function MapCanvas() {
     cells, tiles, mapWidth, mapHeight,
     zoom, panX, panY, showGrid,
     setZoom, setPan,
-    activeTool, activeTileCode,
+    activeTool,
     setCell, setActiveTile, setTool,
     pushOperation,
     selection, setSelection, clipboard,
+    playerOverlay, playerOverlayPos, setPlayerOverlayPos,
   } = useStore()
 
   // Build atlas once
@@ -89,8 +90,9 @@ export function MapCanvas() {
       selection,
       clipboard: pasteMode ? clipboard : null,
       pastePreview: pasteMode ? pastePreview : null,
+      playerOverlayPos: playerOverlay ? playerOverlayPos : null,
     })
-  }, [cells, tiles, mapWidth, mapHeight, zoom, panX, panY, showGrid, selection, clipboard, pasteMode, pastePreview])
+  }, [cells, tiles, mapWidth, mapHeight, zoom, panX, panY, showGrid, selection, clipboard, pasteMode, pastePreview, playerOverlay, playerOverlayPos])
 
   useEffect(() => {
     const id = requestAnimationFrame(draw)
@@ -126,13 +128,18 @@ export function MapCanvas() {
   const applyTool = useCallback(
     (cell: { x: number; y: number }) => {
       const key = `${cell.x},${cell.y}`
-      if (activeTool === 'paint' && activeTileCode) {
+      if (activeTool === 'paint') {
+        // Quick Paint: materialize tile on first cell of stroke
+        const beforePaint = useStore.getState().onBeforePaint
+        if (beforePaint) beforePaint()
+        const tileCode = useStore.getState().activeTileCode
+        if (!tileCode) return
         if (paintedCells.current.has(key)) return
         paintedCells.current.add(key)
         const before = cells[cell.y]?.[cell.x] ?? '..'
-        if (before !== activeTileCode) {
-          strokeChanges.current.push({ x: cell.x, y: cell.y, before, after: activeTileCode })
-          setCell(cell.x, cell.y, activeTileCode)
+        if (before !== tileCode) {
+          strokeChanges.current.push({ x: cell.x, y: cell.y, before, after: tileCode })
+          setCell(cell.x, cell.y, tileCode)
         }
       } else if (activeTool === 'erase') {
         if (paintedCells.current.has(key)) return
@@ -151,7 +158,7 @@ export function MapCanvas() {
         }
       }
     },
-    [activeTool, activeTileCode, cells, setCell, setActiveTile, setTool],
+    [activeTool, cells, setCell, setActiveTile, setTool],
   )
 
   const handleMouseDown = useCallback(
@@ -168,10 +175,14 @@ export function MapCanvas() {
       if (e.button === 2) {
         const cell = mouseToCell(e)
         if (!cell) return
-        const code = cells[cell.y]?.[cell.x]
-        if (code && code !== '..') {
-          setActiveTile(code)
-          setTool('paint')
+        const { cells: currentCells } = useStore.getState()
+        const code = currentCells[cell.y]?.[cell.x]
+        if (code) {
+          const tiles = useStore.getState().tiles
+          if (tiles.has(code)) {
+            useStore.getState().setActiveTile(code)
+            useStore.getState().setTool('paint')
+          }
         }
         return
       }
@@ -179,6 +190,12 @@ export function MapCanvas() {
       if (e.button !== 0) return
       const cell = mouseToCell(e)
       if (!cell) return
+
+      // Alt+click: place player overlay
+      if (e.altKey && useStore.getState().playerOverlay) {
+        useStore.getState().setPlayerOverlayPos({ x: cell.x, y: cell.y })
+        return
+      }
 
       // Paste mode: click to stamp
       if (pasteMode && clipboard) {
@@ -203,7 +220,7 @@ export function MapCanvas() {
       strokeChanges.current = []
       applyTool(cell)
     },
-    [mouseToCell, applyTool, pasteMode, clipboard, setSelection, cells, setActiveTile, setTool],
+    [mouseToCell, applyTool, pasteMode, clipboard, setSelection],
   )
 
   const handleMouseMove = useCallback(
@@ -303,6 +320,7 @@ export function MapCanvas() {
       {hasMap ? (
         <canvas
           ref={canvasRef}
+          data-map=""
           className="absolute inset-0 w-full h-full"
           style={{ cursor }}
           onMouseDown={handleMouseDown}

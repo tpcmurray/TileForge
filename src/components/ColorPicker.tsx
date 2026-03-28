@@ -16,10 +16,16 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
   const [hue, setHue] = useState(() => rgbToHue(color.r, color.g, color.b))
   const satBrightRef = useRef<HTMLCanvasElement>(null)
   const dragging = useRef(false)
+  const [eyedropperActive, setEyedropperActive] = useState(false)
 
   useEffect(() => {
     drawSatBright()
   }, [hue])
+
+  // Redraw crosshair when r/g/b changes
+  useEffect(() => {
+    drawSatBright()
+  }, [r, g, b])
 
   const drawSatBright = useCallback(() => {
     const canvas = satBrightRef.current
@@ -28,7 +34,7 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
     const w = canvas.width
     const h = canvas.height
 
-    // Base hue color
+    // Draw the SV gradient
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const s = x / w
@@ -38,7 +44,23 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
         ctx.fillRect(x, y, 1, 1)
       }
     }
-  }, [hue])
+
+    // Draw crosshair at current color position
+    const { s: curS, v: curV } = rgbToSV(r, g, b, hue)
+    const cx = curS * w
+    const cy = (1 - curV) * h
+
+    ctx.beginPath()
+    ctx.arc(cx, cy, 6, 0, Math.PI * 2)
+    ctx.strokeStyle = '#fff'
+    ctx.lineWidth = 2
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.arc(cx, cy, 7, 0, Math.PI * 2)
+    ctx.strokeStyle = '#000'
+    ctx.lineWidth = 1
+    ctx.stroke()
+  }, [hue, r, g, b])
 
   const pickFromCanvas = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -61,11 +83,58 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
     [onChange],
   )
 
+  // Eyedropper: listen for clicks on the map canvas
+  useEffect(() => {
+    if (!eyedropperActive) return
+
+    const handleClick = (e: MouseEvent) => {
+      const mapCanvas = document.querySelector('canvas[data-map]') as HTMLCanvasElement | null
+      if (!mapCanvas) return
+
+      const rect = mapCanvas.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+
+      if (x < 0 || y < 0 || x >= rect.width || y >= rect.height) return
+
+      e.preventDefault()
+      e.stopPropagation()
+
+      const dpr = window.devicePixelRatio || 1
+      const ctx = mapCanvas.getContext('2d')
+      if (!ctx) return
+      const pixel = ctx.getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data
+      const nr = pixel[0], ng = pixel[1], nb = pixel[2]
+      setR(nr); setG(ng); setB(nb)
+      setHue(rgbToHue(nr, ng, nb))
+      emit(nr, ng, nb, a)
+      setEyedropperActive(false)
+    }
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setEyedropperActive(false)
+    }
+
+    window.addEventListener('mousedown', handleClick, { capture: true })
+    window.addEventListener('keydown', handleKey)
+
+    return () => {
+      window.removeEventListener('mousedown', handleClick, { capture: true })
+      window.removeEventListener('keydown', handleKey)
+    }
+  }, [eyedropperActive, a, emit])
+
   return (
     <div
       className="fixed inset-0 flex items-center justify-center z-50"
-      style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+      style={{
+        background: 'transparent',
+        cursor: eyedropperActive ? 'crosshair' : undefined,
+      }}
+      onClick={(e) => {
+        if (eyedropperActive) return // let the eyedropper handler deal with it
+        if (e.target === e.currentTarget) onClose()
+      }}
     >
       <div
         className="rounded-xl p-5"
@@ -74,6 +143,7 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
           border: '1px solid var(--border-light)',
           boxShadow: '0 24px 80px rgba(0,0,0,0.5)',
           width: 320,
+          pointerEvents: eyedropperActive ? 'none' : undefined,
         }}
       >
         <div className="flex justify-between items-center mb-4">
@@ -115,7 +185,8 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
             onChange={(e) => {
               const h = parseInt(e.target.value)
               setHue(h)
-              const [nr, ng, nb] = hsvToRgb(h, 1, 1)
+              const { s, v } = rgbToSV(r, g, b, hue)
+              const [nr, ng, nb] = hsvToRgb(h, s, v)
               setR(nr); setG(ng); setB(nb)
               emit(nr, ng, nb, a)
             }}
@@ -218,7 +289,7 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
           />
         </div>
 
-        {/* Preview + transparent button */}
+        {/* Preview + eyedropper + transparent + done */}
         <div className="flex items-center gap-3">
           <div
             className="w-10 h-10 rounded"
@@ -229,6 +300,18 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
               border: '2px solid var(--border-light)',
             }}
           />
+          <button
+            className="text-xs px-2.5 py-1.5 rounded cursor-pointer"
+            style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              color: 'var(--text)',
+            }}
+            title="Pick color from map"
+            onClick={() => setEyedropperActive(true)}
+          >
+            &#x1F4A7;
+          </button>
           {showTransparent && (
             <button
               className="text-xs px-3 py-1.5 rounded cursor-pointer"
@@ -238,8 +321,9 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
                 color: a === 0 ? 'var(--accent)' : 'var(--text)',
               }}
               onClick={() => {
-                setA(0)
-                emit(r, g, b, 0)
+                const na = a === 0 ? 255 : 0
+                setA(na)
+                emit(r, g, b, na)
               }}
             >
               Transparent
@@ -261,6 +345,16 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
       </div>
     </div>
   )
+}
+
+/** Convert RGB to saturation and value for the current hue */
+function rgbToSV(r: number, g: number, b: number, _hue: number): { s: number; v: number } {
+  const rn = r / 255, gn = g / 255, bn = b / 255
+  const max = Math.max(rn, gn, bn)
+  const min = Math.min(rn, gn, bn)
+  const v = max
+  const s = max === 0 ? 0 : (max - min) / max
+  return { s, v }
 }
 
 function rgbToHue(r: number, g: number, b: number): number {

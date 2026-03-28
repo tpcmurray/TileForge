@@ -57,6 +57,16 @@ export interface TileForgeState {
   registryFileHandle: FileSystemFileHandle | null
   setMapFileHandle: (h: FileSystemFileHandle | null) => void
   setRegistryFileHandle: (h: FileSystemFileHandle | null) => void
+
+  // ── Quick Paint ──
+  onBeforePaint: (() => void) | null
+  setOnBeforePaint: (cb: (() => void) | null) => void
+
+  // ── Player Overlay ──
+  playerOverlay: boolean
+  playerOverlayPos: { x: number; y: number } | null
+  setPlayerOverlay: (on: boolean) => void
+  setPlayerOverlayPos: (pos: { x: number; y: number } | null) => void
 }
 
 export const useStore = create<TileForgeState>((set, get) => ({
@@ -265,4 +275,14 @@ export const useStore = create<TileForgeState>((set, get) => ({
   registryFileHandle: null,
   setMapFileHandle: (h) => set({ mapFileHandle: h }),
   setRegistryFileHandle: (h) => set({ registryFileHandle: h }),
+
+  // ── Quick Paint ──
+  onBeforePaint: null,
+  setOnBeforePaint: (cb) => set({ onBeforePaint: cb }),
+
+  // ── Player Overlay ──
+  playerOverlay: false,
+  playerOverlayPos: null,
+  setPlayerOverlay: (on) => set({ playerOverlay: on, playerOverlayPos: on ? null : null }),
+  setPlayerOverlayPos: (pos) => set({ playerOverlayPos: pos }),
 }))

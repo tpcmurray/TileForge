@@ -51,6 +51,7 @@ export function MenuBar() {
           const height = parseInt(h)
           if (width > 0 && height > 0) {
             store.getState().clearMap(width, height, '..')
+            store.getState().setMapFileHandle(null)
           }
         }
         setOpenMenu(null)
@@ -267,6 +268,31 @@ export function MenuBar() {
     })
   }
 
+  const editItems: MenuItem[] = [
+    {
+      label: 'Resize Canvas…',
+      action: () => {
+        const { mapWidth, mapHeight, cells } = store.getState()
+        const w = prompt('New width (cells):', String(mapWidth))
+        const h = prompt('New height (cells):', String(mapHeight))
+        if (!w || !h) return
+        const newW = parseInt(w)
+        const newH = parseInt(h)
+        if (newW <= 0 || newH <= 0 || isNaN(newW) || isNaN(newH)) return
+        const newCells: string[][] = Array.from({ length: newH }, (_, row) =>
+          Array.from({ length: newW }, (_, col) =>
+            row < cells.length && col < (cells[row]?.length ?? 0)
+              ? cells[row][col]
+              : '..'
+          )
+        )
+        store.getState().loadMap(newCells, newW, newH)
+        store.setState({ mapDirty: true })
+        setOpenMenu(null)
+      },
+    },
+  ]
+
   const viewItems: MenuItem[] = [
     {
       label: 'Toggle Grid',
@@ -283,10 +309,20 @@ export function MenuBar() {
         setOpenMenu(null)
       },
     },
+    { label: '—', action: () => {} },
+    {
+      label: store.getState().playerOverlay ? '✓ Player Overlay' : '  Player Overlay',
+      action: () => {
+        const on = !store.getState().playerOverlay
+        store.getState().setPlayerOverlay(on)
+        setOpenMenu(null)
+      },
+    },
   ]
 
   const menus: Record<string, MenuItem[]> = {
     File: fileItems,
+    Edit: editItems,
     View: viewItems,
   }
 
@@ -310,7 +346,7 @@ export function MenuBar() {
           v0.1
         </span>
       </div>
-      {['File', 'Edit', 'View', 'Help'].map((item) => (
+      {['File', 'Edit', 'View'].map((item) => (
         <div key={item} className="relative">
           <div
             className="px-2.5 py-1 text-xs rounded cursor-pointer transition-colors"
