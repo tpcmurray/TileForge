@@ -1,8 +1,12 @@
 import { ToolSelector } from './ToolSelector'
 import { ActiveTileDisplay } from './ActiveTileDisplay'
 import { TilePalette } from './TilePalette'
+import { EntityPanel } from './EntityPanel'
+import { useStore } from '../store'
 
 export function Toolbar() {
+  const activeTool = useStore((s) => s.activeTool)
+
   return (
     <div
       className="overflow-y-auto overflow-x-hidden"
@@ -16,12 +20,20 @@ export function Toolbar() {
       <ToolbarSection title="Tools">
         <ToolSelector />
       </ToolbarSection>
-      <ToolbarSection title="Active Tile">
-        <ActiveTileDisplay />
-      </ToolbarSection>
-      <ToolbarSection title="Tile Palette" noBorder>
-        <TilePalette />
-      </ToolbarSection>
+      {activeTool === 'entity' ? (
+        <ToolbarSection title="Entities" noBorder>
+          <EntityPanel />
+        </ToolbarSection>
+      ) : (
+        <>
+          <ToolbarSection title="Active Tile">
+            <ActiveTileDisplay />
+          </ToolbarSection>
+          <ToolbarSection title="Tile Palette" noBorder>
+            <TilePalette />
+          </ToolbarSection>
+        </>
+      )}
     </div>
   )
 }

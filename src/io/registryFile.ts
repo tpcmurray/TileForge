@@ -1,4 +1,4 @@
-import type { TileDefinition, TileRegistryFile, RGBA } from '../types'
+import type { TileDefinition } from '../types'
 
 export interface RegistryParseError {
   message: string

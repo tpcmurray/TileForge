@@ -54,10 +54,71 @@ export interface CellChange {
 export interface Operation {
   description: string
   changes: CellChange[]
+  entityChanges?: EntityChange[]
+}
+
+/** A single entity change for undo/redo */
+export interface EntityChange {
+  action: 'add' | 'update' | 'delete'
+  before: Entity | null
+  after: Entity | null
 }
 
 /** Active tool types */
-export type ToolType = 'paint' | 'erase' | 'pick'
+export type ToolType = 'paint' | 'erase' | 'pick' | 'entity'
+
+// ── Entity types ──
+
+export type EntityType = 'DOOR' | 'SPAWN' | 'NPC' | 'CHEST' | 'SIGN' | 'TRIGGER'
+
+interface EntityBase {
+  id: string
+  type: EntityType
+  x: number
+  y: number
+}
+
+export interface DoorEntity extends EntityBase {
+  type: 'DOOR'
+  w: number
+  h: number
+  targetZone: string
+  targetX: number
+  targetY: number
+}
+
+export interface SpawnEntity extends EntityBase {
+  type: 'SPAWN'
+  mobDefId: string
+  patrol: { x1: number; y1: number; x2: number; y2: number } | null
+}
+
+export interface NpcEntity extends EntityBase {
+  type: 'NPC'
+  npcDefId: string
+}
+
+export interface ChestEntity extends EntityBase {
+  type: 'CHEST'
+  lootTable: string
+  itemLevel: number
+}
+
+export interface SignEntity extends EntityBase {
+  type: 'SIGN'
+  message: string
+}
+
+export interface TriggerEntity extends EntityBase {
+  type: 'TRIGGER'
+  w: number
+  h: number
+  cutsceneId: string
+  flag: string | null
+  absent: string | null
+}
+
+export type Entity = DoorEntity | SpawnEntity | NpcEntity | ChestEntity | SignEntity | TriggerEntity
 
 /** Rectangular selection on the map */
 export interface Selection {

@@ -6,6 +6,7 @@ const tools: { type: ToolType; label: string; icon: string; key: string }[] = [
   { type: 'paint', label: 'Paint', icon: '✏', key: 'b' },
   { type: 'erase', label: 'Erase', icon: '⌫', key: 'e' },
   { type: 'pick', label: 'Pick', icon: '◉', key: 'i' },
+  { type: 'entity', label: 'Entity', icon: '⚑', key: 'n' },
 ]
 
 export function ToolSelector() {
@@ -23,7 +24,7 @@ export function ToolSelector() {
   }, [setTool])
 
   return (
-    <div className="grid grid-cols-3 gap-1">
+    <div className="grid grid-cols-4 gap-1">
       {tools.map((t) => {
         const active = activeTool === t.type
         return (

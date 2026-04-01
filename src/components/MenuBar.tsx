@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useStore } from '../store'
 import { parseRegistry, serializeRegistry } from '../io/registryFile'
 import { parseTerrain, serializeTerrain } from '../io/terrainFile'
+import { parseEntities, serializeEntities } from '../io/entitiesFile'
 import { importCSharpRegistry } from '../io/csharpImporter'
 import { getRecentFiles, addRecentFile, clearRecentFiles } from '../utils/recentFiles'
 import type { RecentEntry } from '../utils/recentFiles'
@@ -61,7 +62,7 @@ export function MenuBar() {
       label: 'Open Map…',
       action: async () => {
         setOpenMenu(null)
-        const [handle] = await window.showOpenFilePicker({
+        const [handle] = await (window as any).showOpenFilePicker({
           types: [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }],
         }).catch(() => [null])
         if (!handle) return
@@ -74,6 +75,24 @@ export function MenuBar() {
         recordRecent(file.name, 'map', handle)
         if (result.unknownCodes.size > 0) {
           alert(`Unknown tile codes: ${[...result.unknownCodes].join(', ')}`)
+        }
+        // Auto-prompt for matching .entities file
+        try {
+          const [eHandle] = await (window as any).showOpenFilePicker({
+            types: [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }],
+          })
+          if (eHandle) {
+            const eFile = await eHandle.getFile()
+            const eText = await eFile.text()
+            const eResult = parseEntities(eText)
+            if (eResult.errors.length > 0) {
+              alert('Entity errors:\n' + eResult.errors.join('\n'))
+            }
+            store.getState().loadEntities(eResult.entities, eResult.comments, eResult.unknownLines)
+            store.getState().setEntitiesFileHandle(eHandle)
+          }
+        } catch {
+          // User cancelled — no entities loaded
         }
       },
     },
@@ -119,7 +138,7 @@ export function MenuBar() {
       label: 'Open Registry…',
       action: async () => {
         setOpenMenu(null)
-        const [handle] = await window.showOpenFilePicker({
+        const [handle] = await (window as any).showOpenFilePicker({
           types: [{ description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } }],
         }).catch(() => [null])
         if (!handle) return
@@ -179,7 +198,7 @@ export function MenuBar() {
       label: 'Import C# Registry…',
       action: async () => {
         setOpenMenu(null)
-        const [handle] = await window.showOpenFilePicker({
+        const [handle] = await (window as any).showOpenFilePicker({
           types: [{ description: 'C# Source', accept: { 'text/plain': ['.cs'] } }],
         }).catch(() => [null])
         if (!handle) return
@@ -196,6 +215,67 @@ export function MenuBar() {
         alert(`Imported ${result.tiles.length} tiles`)
       },
     },
+    { label: '—', action: () => {} },
+    {
+      label: 'Open Entities…',
+      action: async () => {
+        setOpenMenu(null)
+        const [handle] = await (window as any).showOpenFilePicker({
+          types: [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }],
+        }).catch(() => [null])
+        if (!handle) return
+        const file = await handle.getFile()
+        const text = await file.text()
+        const result = parseEntities(text)
+        if (result.errors.length > 0) {
+          alert('Entity errors:\n' + result.errors.join('\n'))
+        }
+        store.getState().loadEntities(result.entities, result.comments, result.unknownLines)
+        store.getState().setEntitiesFileHandle(handle)
+      },
+    },
+    {
+      label: 'Save Entities',
+      action: async () => {
+        setOpenMenu(null)
+        const { entities, entityComments, entityUnknownLines, entitiesFileHandle } = store.getState()
+        if (entities.length === 0 && entityComments.length === 0) return
+        const text = serializeEntities(entities, entityComments, entityUnknownLines)
+        if (entitiesFileHandle) {
+          await writeToHandle(entitiesFileHandle, text)
+        } else {
+          const handle = await saveWithPicker(text, 'map.entities', [
+            { description: 'Entities files', accept: { 'text/plain': ['.entities'] } },
+          ])
+          if (!handle) return
+          store.getState().setEntitiesFileHandle(handle)
+        }
+        store.setState({ entitiesDirty: false })
+      },
+    },
+    {
+      label: 'Save Entities As…',
+      action: async () => {
+        setOpenMenu(null)
+        const { entities, entityComments, entityUnknownLines } = store.getState()
+        if (entities.length === 0 && entityComments.length === 0) return
+        const text = serializeEntities(entities, entityComments, entityUnknownLines)
+        const handle = await saveWithPicker(text, 'map.entities', [
+          { description: 'Entities files', accept: { 'text/plain': ['.entities'] } },
+        ])
+        if (!handle) return
+        store.getState().setEntitiesFileHandle(handle)
+        store.setState({ entitiesDirty: false })
+      },
+    },
+    { label: '—', action: () => {} },
+    {
+      label: 'Save All',
+      action: async () => {
+        setOpenMenu(null)
+        await saveAll()
+      },
+    },
   ]
 
   // Build recent files section
@@ -205,7 +285,7 @@ export function MenuBar() {
   const openRecentMap = (entry: RecentEntry) => async () => {
     setOpenMenu(null)
     try {
-      const perm = await entry.handle.requestPermission({ mode: 'readwrite' })
+      const perm = await (entry.handle as any).requestPermission({ mode: 'readwrite' })
       if (perm !== 'granted') return
       const file = await entry.handle.getFile()
       const text = await file.text()
@@ -225,7 +305,7 @@ export function MenuBar() {
   const openRecentRegistry = (entry: RecentEntry) => async () => {
     setOpenMenu(null)
     try {
-      const perm = await entry.handle.requestPermission({ mode: 'readwrite' })
+      const perm = await (entry.handle as any).requestPermission({ mode: 'readwrite' })
       if (perm !== 'granted') return
       const file = await entry.handle.getFile()
       const json = await file.text()
@@ -315,6 +395,13 @@ export function MenuBar() {
       action: () => {
         const on = !store.getState().playerOverlay
         store.getState().setPlayerOverlay(on)
+        setOpenMenu(null)
+      },
+    },
+    {
+      label: store.getState().showEntities ? '✓ Show Entities' : '  Show Entities',
+      action: () => {
+        store.getState().toggleShowEntities()
         setOpenMenu(null)
       },
     },
@@ -427,6 +514,54 @@ function DropdownMenu({ items }: { items: MenuItem[] }) {
   )
 }
 
+/** Save all dirty files (map, entities, registry) */
+async function saveAll() {
+  const s = useStore.getState()
+
+  // Save map
+  if (s.cells.length > 0) {
+    const text = serializeTerrain(s.cells)
+    if (s.mapFileHandle) {
+      await writeToHandle(s.mapFileHandle, text)
+    } else {
+      const handle = await saveWithPicker(text, 'map.terrain', [
+        { description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } },
+      ])
+      if (handle) useStore.getState().setMapFileHandle(handle)
+    }
+    useStore.setState({ mapDirty: false })
+  }
+
+  // Save entities
+  if (s.entities.length > 0 || s.entityComments.length > 0) {
+    const text = serializeEntities(s.entities, s.entityComments, s.entityUnknownLines)
+    if (s.entitiesFileHandle) {
+      await writeToHandle(s.entitiesFileHandle, text)
+    } else {
+      const handle = await saveWithPicker(text, 'map.entities', [
+        { description: 'Entities files', accept: { 'text/plain': ['.entities'] } },
+      ])
+      if (handle) useStore.getState().setEntitiesFileHandle(handle)
+    }
+    useStore.setState({ entitiesDirty: false })
+  }
+
+  // Save registry
+  const tiles = [...s.tiles.values()]
+  if (tiles.length > 0) {
+    const json = serializeRegistry(tiles)
+    if (s.registryFileHandle) {
+      await writeToHandle(s.registryFileHandle, json)
+    } else {
+      const handle = await saveWithPicker(json, 'tiles.tileregistry', [
+        { description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } },
+      ])
+      if (handle) useStore.getState().setRegistryFileHandle(handle)
+    }
+    useStore.setState({ registryDirty: false })
+  }
+}
+
 /** Write content to an existing file handle */
 async function writeToHandle(handle: FileSystemFileHandle, content: string) {
   const writable = await handle.createWritable()
@@ -438,10 +573,10 @@ async function writeToHandle(handle: FileSystemFileHandle, content: string) {
 async function saveWithPicker(
   content: string,
   suggestedName: string,
-  types: FilePickerAcceptType[],
+  types: { description: string; accept: Record<string, string[]> }[],
 ): Promise<FileSystemFileHandle | null> {
   try {
-    const handle = await window.showSaveFilePicker({ suggestedName, types })
+    const handle = await (window as any).showSaveFilePicker({ suggestedName, types })
     await writeToHandle(handle, content)
     return handle
   } catch {

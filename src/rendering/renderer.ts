@@ -1,4 +1,4 @@
-import type { TileDefinition, Selection } from '../types'
+import type { TileDefinition, Selection, Entity } from '../types'
 import { drawGlyph } from './atlas'
 import { rgbaToCSS, drawCheckerboard } from './tinting'
 
@@ -18,6 +18,9 @@ export interface RenderOptions {
   clipboard?: string[][] | null
   pastePreview?: { x: number; y: number } | null
   playerOverlayPos?: { x: number; y: number } | null
+  entities?: Entity[]
+  showEntities?: boolean
+  selectedEntityId?: string | null
 }
 
 /** Deterministic hash for stable random variant selection per cell */
@@ -111,6 +114,11 @@ export function renderMap(
     ctx.stroke()
   }
 
+  // Entity markers
+  if (opts.showEntities && opts.entities && opts.entities.length > 0) {
+    renderEntities(ctx, opts.entities, opts.selectedEntityId ?? null, cellW, cellH, panX, panY, startCol, startRow, endCol, endRow)
+  }
+
   // Selection overlay
   if (selection && selection.w > 0 && selection.h > 0) {
     const sx = panX + selection.x * cellW
@@ -197,5 +205,95 @@ export function renderMap(
     ctx.setLineDash([4, 3])
     ctx.strokeRect(ox, oy, cellW * 3, cellH * 3)
     ctx.setLineDash([])
+  }
+}
+
+const ENTITY_COLORS: Record<string, string> = {
+  DOOR: 'rgba(200,120,255,0.7)',
+  SPAWN: 'rgba(255,80,80,0.7)',
+  NPC: 'rgba(80,200,255,0.7)',
+  CHEST: 'rgba(255,200,50,0.7)',
+  SIGN: 'rgba(150,255,150,0.7)',
+  TRIGGER: 'rgba(255,160,60,0.7)',
+}
+
+const ENTITY_LABELS: Record<string, string> = {
+  DOOR: 'D',
+  SPAWN: 'S',
+  NPC: 'N',
+  CHEST: 'C',
+  SIGN: '!',
+  TRIGGER: 'T',
+}
+
+function renderEntities(
+  ctx: CanvasRenderingContext2D,
+  entities: Entity[],
+  selectedId: string | null,
+  cellW: number,
+  cellH: number,
+  panX: number,
+  panY: number,
+  startCol: number,
+  startRow: number,
+  endCol: number,
+  endRow: number,
+): void {
+  const fontSize = Math.max(8, Math.min(cellW * 0.8, cellH * 0.5))
+  ctx.font = `bold ${fontSize}px monospace`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+
+  for (const e of entities) {
+    const ew = 'w' in e ? (e as { w: number }).w : 1
+    const eh = 'h' in e ? (e as { h: number }).h : 1
+
+    // Skip entities entirely outside visible range
+    if (e.x + ew <= startCol || e.x >= endCol || e.y + eh <= startRow || e.y >= endRow) continue
+
+    const x = panX + e.x * cellW
+    const y = panY + e.y * cellH
+    const w = ew * cellW
+    const h = eh * cellH
+
+    // Filled rect
+    ctx.fillStyle = ENTITY_COLORS[e.type] ?? 'rgba(128,128,128,0.7)'
+    ctx.fillRect(x, y, w, h)
+
+    // Label in top-left cell
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(ENTITY_LABELS[e.type] ?? '?', x + cellW / 2, y + cellH / 2)
+
+    // Border
+    ctx.strokeStyle = ENTITY_COLORS[e.type] ?? 'rgba(128,128,128,0.9)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(x, y, w, h)
+
+    // Selected highlight
+    if (e.id === selectedId) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+      ctx.lineWidth = 2
+      ctx.setLineDash([6, 3])
+      ctx.strokeRect(x - 1, y - 1, w + 2, h + 2)
+      ctx.setLineDash([])
+    }
+
+    // SPAWN patrol line
+    if (e.type === 'SPAWN' && e.patrol) {
+      const p = e.patrol
+      const px1 = panX + p.x1 * cellW + cellW / 2
+      const py1 = panY + p.y1 * cellH + cellH / 2
+      const px2 = panX + p.x2 * cellW + cellW / 2
+      const py2 = panY + p.y2 * cellH + cellH / 2
+      ctx.strokeStyle = 'rgba(255,80,80,0.4)'
+      ctx.lineWidth = 1
+      ctx.setLineDash([3, 3])
+      ctx.beginPath()
+      ctx.moveTo(x + cellW / 2, y + cellH / 2)
+      ctx.lineTo(px1, py1)
+      ctx.lineTo(px2, py2)
+      ctx.stroke()
+      ctx.setLineDash([])
+    }
   }
 }

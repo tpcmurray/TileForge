@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { useStore } from '../store'
 import { serializeTerrain } from '../io/terrainFile'
+import { serializeEntities } from '../io/entitiesFile'
+import { serializeRegistry } from '../io/registryFile'
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
@@ -24,29 +26,47 @@ export function useKeyboardShortcuts() {
         return
       }
 
-      // Ctrl+S — Save map (reuses file handle if available)
+      // Ctrl+Shift+S — Save All (map + entities + registry)
+      if (ctrl && shift && e.key.toLowerCase() === 's') {
+        e.preventDefault()
+        saveAllFiles()
+        return
+      }
+
+      // Ctrl+S — Save map + entities (reuses file handle if available)
       if (ctrl && e.key === 's') {
         e.preventDefault()
-        const { cells, mapFileHandle } = useStore.getState()
-        if (cells.length === 0) return
-        const text = serializeTerrain(cells)
-        if (mapFileHandle) {
-          mapFileHandle.createWritable().then(async (w) => {
-            await w.write(text)
+        const s = useStore.getState()
+        // Save map
+        if (s.cells.length > 0) {
+          const text = serializeTerrain(s.cells)
+          if (s.mapFileHandle) {
+            s.mapFileHandle.createWritable().then(async (w) => {
+              await w.write(text)
+              await w.close()
+              useStore.setState({ mapDirty: false })
+            })
+          } else {
+            (window as any).showSaveFilePicker({
+              suggestedName: 'map.terrain',
+              types: [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }],
+            }).then(async (handle: FileSystemFileHandle) => {
+              const w = await handle.createWritable()
+              await w.write(text)
+              await w.close()
+              useStore.getState().setMapFileHandle(handle)
+              useStore.setState({ mapDirty: false })
+            }).catch(() => {})
+          }
+        }
+        // Save entities if dirty
+        if (s.entitiesDirty && s.entitiesFileHandle) {
+          const eText = serializeEntities(s.entities, s.entityComments, s.entityUnknownLines)
+          s.entitiesFileHandle.createWritable().then(async (w) => {
+            await w.write(eText)
             await w.close()
-            useStore.setState({ mapDirty: false })
+            useStore.setState({ entitiesDirty: false })
           })
-        } else {
-          window.showSaveFilePicker({
-            suggestedName: 'map.terrain',
-            types: [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }],
-          }).then(async (handle) => {
-            const w = await handle.createWritable()
-            await w.write(text)
-            await w.close()
-            useStore.getState().setMapFileHandle(handle)
-            useStore.setState({ mapDirty: false })
-          }).catch(() => {})
         }
         return
       }
@@ -92,9 +112,13 @@ export function useKeyboardShortcuts() {
         return
       }
 
-      // Delete — clear selected cells
+      // Delete — delete selected entity or clear selected cells
       if (e.key === 'Delete') {
         const s = useStore.getState()
+        if (s.activeTool === 'entity' && s.selectedEntityId) {
+          s.deleteEntity(s.selectedEntityId)
+          return
+        }
         if (s.selection) {
           const changes: { x: number; y: number; before: string; after: string }[] = []
           const updates: { x: number; y: number; code: string }[] = []
@@ -122,4 +146,75 @@ export function useKeyboardShortcuts() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [])
+}
+
+async function saveAllFiles() {
+  const s = useStore.getState()
+
+  // Save map
+  if (s.cells.length > 0) {
+    const text = serializeTerrain(s.cells)
+    if (s.mapFileHandle) {
+      const w = await s.mapFileHandle.createWritable()
+      await w.write(text)
+      await w.close()
+    } else {
+      try {
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: 'map.terrain',
+          types: [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }],
+        })
+        const w = await handle.createWritable()
+        await w.write(text)
+        await w.close()
+        useStore.getState().setMapFileHandle(handle)
+      } catch { /* cancelled */ }
+    }
+    useStore.setState({ mapDirty: false })
+  }
+
+  // Save entities
+  if (s.entities.length > 0 || s.entityComments.length > 0) {
+    const eText = serializeEntities(s.entities, s.entityComments, s.entityUnknownLines)
+    if (s.entitiesFileHandle) {
+      const w = await s.entitiesFileHandle.createWritable()
+      await w.write(eText)
+      await w.close()
+    } else {
+      try {
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: 'map.entities',
+          types: [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }],
+        })
+        const w = await handle.createWritable()
+        await w.write(eText)
+        await w.close()
+        useStore.getState().setEntitiesFileHandle(handle)
+      } catch { /* cancelled */ }
+    }
+    useStore.setState({ entitiesDirty: false })
+  }
+
+  // Save registry
+  const tiles = [...s.tiles.values()]
+  if (tiles.length > 0) {
+    const json = serializeRegistry(tiles)
+    if (s.registryFileHandle) {
+      const w = await s.registryFileHandle.createWritable()
+      await w.write(json)
+      await w.close()
+    } else {
+      try {
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: 'tiles.tileregistry',
+          types: [{ description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } }],
+        })
+        const w = await handle.createWritable()
+        await w.write(json)
+        await w.close()
+        useStore.getState().setRegistryFileHandle(handle)
+      } catch { /* cancelled */ }
+    }
+    useStore.setState({ registryDirty: false })
+  }
 }

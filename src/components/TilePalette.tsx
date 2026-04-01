@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo } from 'react'
 import { useStore } from '../store'
 import { cp437ToUnicode } from '../utils/cp437'
 import { rgbaToCSS } from '../rendering/tinting'

@@ -2,6 +2,9 @@ import { useRef, useEffect, useCallback, useState } from 'react'
 import { useStore } from '../store'
 import { buildAtlas } from '../rendering/atlas'
 import { renderMap } from '../rendering/renderer'
+import { useEntityTool } from '../hooks/useEntityTool'
+import { EntityEditDialog } from './EntityEditDialog'
+import type { Entity } from '../types'
 
 /** Base cell size in pixels at zoom 1.0 (1:2 ratio matching 8×16 characters) */
 const BASE_CELL_W = 16
@@ -20,6 +23,7 @@ export function MapCanvas() {
 
   const [pastePreview, setPastePreview] = useState<{ x: number; y: number } | null>(null)
   const [pasteMode, setPasteMode] = useState(false)
+  const [editingEntity, setEditingEntity] = useState<{ entity: Entity | null; defaultPos?: { x: number; y: number } } | null>(null)
 
   const {
     cells, tiles, mapWidth, mapHeight,
@@ -29,7 +33,8 @@ export function MapCanvas() {
     setCell, setActiveTile, setTool,
     pushOperation,
     selection, setSelection, clipboard,
-    playerOverlay, playerOverlayPos, setPlayerOverlayPos,
+    playerOverlay, playerOverlayPos,
+    entities, showEntities, selectedEntityId,
   } = useStore()
 
   // Build atlas once
@@ -91,8 +96,11 @@ export function MapCanvas() {
       clipboard: pasteMode ? clipboard : null,
       pastePreview: pasteMode ? pastePreview : null,
       playerOverlayPos: playerOverlay ? playerOverlayPos : null,
+      entities: showEntities ? entities : undefined,
+      showEntities,
+      selectedEntityId,
     })
-  }, [cells, tiles, mapWidth, mapHeight, zoom, panX, panY, showGrid, selection, clipboard, pasteMode, pastePreview, playerOverlay, playerOverlayPos])
+  }, [cells, tiles, mapWidth, mapHeight, zoom, panX, panY, showGrid, selection, clipboard, pasteMode, pastePreview, playerOverlay, playerOverlayPos, entities, showEntities, selectedEntityId])
 
   useEffect(() => {
     const id = requestAnimationFrame(draw)
@@ -124,6 +132,12 @@ export function MapCanvas() {
     },
     [zoom, panX, panY, mapWidth, mapHeight],
   )
+
+  const openEditDialog = useCallback((entity: Entity | null, defaultPos?: { x: number; y: number }) => {
+    setEditingEntity({ entity, defaultPos })
+  }, [])
+
+  const entityTool = useEntityTool(mouseToCell, openEditDialog)
 
   const applyTool = useCallback(
     (cell: { x: number; y: number }) => {
@@ -188,6 +202,13 @@ export function MapCanvas() {
       }
 
       if (e.button !== 0) return
+
+      // Entity tool: delegate to entity handler
+      if (activeTool === 'entity') {
+        entityTool.handleMouseDown(e)
+        return
+      }
+
       const cell = mouseToCell(e)
       if (!cell) return
 
@@ -220,7 +241,7 @@ export function MapCanvas() {
       strokeChanges.current = []
       applyTool(cell)
     },
-    [mouseToCell, applyTool, pasteMode, clipboard, setSelection],
+    [mouseToCell, applyTool, pasteMode, clipboard, setSelection, activeTool, entityTool],
   )
 
   const handleMouseMove = useCallback(
@@ -236,6 +257,12 @@ export function MapCanvas() {
         const dy = e.clientY - lastMouse.current.y
         setPan(panX + dx, panY + dy)
         lastMouse.current = { x: e.clientX, y: e.clientY }
+        return
+      }
+
+      // Entity tool drag
+      if (activeTool === 'entity') {
+        entityTool.handleMouseMove(e)
         return
       }
 
@@ -258,10 +285,13 @@ export function MapCanvas() {
         applyTool(cell)
       }
     },
-    [mouseToCell, panX, panY, setPan, applyTool, pasteMode, setSelection],
+    [mouseToCell, panX, panY, setPan, applyTool, pasteMode, setSelection, activeTool, entityTool],
   )
 
   const handleMouseUp = useCallback(() => {
+    if (activeTool === 'entity') {
+      entityTool.handleMouseUp()
+    }
     if (isPanning.current) {
       isPanning.current = false
       return
@@ -281,7 +311,7 @@ export function MapCanvas() {
       paintedCells.current.clear()
       strokeChanges.current = []
     }
-  }, [activeTool, pushOperation])
+  }, [activeTool, pushOperation, entityTool])
 
   const handleWheel = useCallback(
     (e: React.WheelEvent) => {
@@ -309,7 +339,9 @@ export function MapCanvas() {
     ? 'copy'
     : activeTool === 'pick'
       ? 'crosshair'
-      : 'default'
+      : activeTool === 'entity'
+        ? 'pointer'
+        : 'default'
 
   return (
     <div
@@ -327,6 +359,7 @@ export function MapCanvas() {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onDoubleClick={activeTool === 'entity' ? entityTool.handleDoubleClick : undefined}
           onWheel={handleWheel}
           onContextMenu={(e) => e.preventDefault()}
         />
@@ -368,6 +401,15 @@ export function MapCanvas() {
         >
           Click to paste · Esc to cancel
         </div>
+      )}
+
+      {/* Entity edit dialog */}
+      {editingEntity && (
+        <EntityEditDialog
+          entity={editingEntity.entity}
+          defaultPos={editingEntity.defaultPos}
+          onClose={() => setEditingEntity(null)}
+        />
       )}
     </div>
   )

@@ -4,8 +4,8 @@ import { useStore } from '../store'
 export function useUnsavedChanges() {
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      const { mapDirty, registryDirty } = useStore.getState()
-      if (mapDirty || registryDirty) {
+      const { mapDirty, registryDirty, entitiesDirty } = useStore.getState()
+      if (mapDirty || registryDirty || entitiesDirty) {
         e.preventDefault()
       }
     }

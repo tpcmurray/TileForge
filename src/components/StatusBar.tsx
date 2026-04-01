@@ -2,8 +2,8 @@ import { useStore } from '../store'
 
 export function StatusBar() {
   const { tiles, mapWidth, mapHeight, cells, zoom, mapDirty, registryDirty } = useStore()
-  const cursorX = useStore((s) => (s as Record<string, number>)._cursorX ?? -1)
-  const cursorY = useStore((s) => (s as Record<string, number>)._cursorY ?? -1)
+  const cursorX = useStore((s) => (s as unknown as Record<string, number>)._cursorX ?? -1)
+  const cursorY = useStore((s) => (s as unknown as Record<string, number>)._cursorY ?? -1)
 
   const hasCursor = cursorX >= 0 && cursorY >= 0
   const tileCode = hasCursor ? cells[cursorY]?.[cursorX] : null

@@ -4,6 +4,8 @@ import type {
   ToolType,
   Selection,
   Operation,
+  Entity,
+  EntityChange,
 } from '../types'
 
 export interface TileForgeState {
@@ -57,6 +59,24 @@ export interface TileForgeState {
   registryFileHandle: FileSystemFileHandle | null
   setMapFileHandle: (h: FileSystemFileHandle | null) => void
   setRegistryFileHandle: (h: FileSystemFileHandle | null) => void
+
+  // ── Entity Slice ──
+  entities: Entity[]
+  entityComments: string[]
+  entityUnknownLines: string[]
+  entitiesDirty: boolean
+  selectedEntityId: string | null
+  showEntities: boolean
+  entitiesFileHandle: FileSystemFileHandle | null
+  setEntitiesFileHandle: (h: FileSystemFileHandle | null) => void
+  loadEntities: (entities: Entity[], comments: string[], unknownLines: string[]) => void
+  clearEntities: () => void
+  addEntity: (entity: Entity) => void
+  updateEntity: (id: string, entity: Entity) => void
+  deleteEntity: (id: string) => void
+  moveEntity: (id: string, x: number, y: number) => void
+  setSelectedEntity: (id: string | null) => void
+  toggleShowEntities: () => void
 
   // ── Quick Paint ──
   onBeforePaint: (() => void) | null
@@ -159,6 +179,12 @@ export const useStore = create<TileForgeState>((set, get) => ({
       mapDirty: false,
       undoStack: [],
       redoStack: [],
+      entities: [],
+      entityComments: [],
+      entityUnknownLines: [],
+      entitiesDirty: false,
+      selectedEntityId: null,
+      entitiesFileHandle: null,
     })),
 
   // ── Tool ──
@@ -233,11 +259,28 @@ export const useStore = create<TileForgeState>((set, get) => ({
           cells[y][x] = before
         }
       }
+      let entities = s.entities
+      let entitiesDirty = s.entitiesDirty
+      if (op.entityChanges && op.entityChanges.length > 0) {
+        entities = [...entities]
+        for (const ec of op.entityChanges) {
+          if (ec.action === 'add' && ec.after) {
+            entities = entities.filter((e) => e.id !== ec.after!.id)
+          } else if (ec.action === 'delete' && ec.before) {
+            entities.push(ec.before)
+          } else if (ec.action === 'update' && ec.before) {
+            entities = entities.map((e) => (e.id === ec.before!.id ? ec.before! : e))
+          }
+        }
+        entitiesDirty = true
+      }
       return {
         cells,
+        entities,
+        entitiesDirty,
         undoStack,
         redoStack: [...s.redoStack, op],
-        mapDirty: true,
+        mapDirty: op.changes.length > 0 ? true : s.mapDirty,
       }
     }),
 
@@ -252,11 +295,28 @@ export const useStore = create<TileForgeState>((set, get) => ({
           cells[y][x] = after
         }
       }
+      let entities = s.entities
+      let entitiesDirty = s.entitiesDirty
+      if (op.entityChanges && op.entityChanges.length > 0) {
+        entities = [...entities]
+        for (const ec of op.entityChanges) {
+          if (ec.action === 'add' && ec.after) {
+            entities.push(ec.after)
+          } else if (ec.action === 'delete' && ec.after) {
+            entities = entities.filter((e) => e.id !== ec.after!.id)
+          } else if (ec.action === 'update' && ec.after) {
+            entities = entities.map((e) => (e.id === ec.after!.id ? ec.after! : e))
+          }
+        }
+        entitiesDirty = true
+      }
       return {
         cells,
+        entities,
+        entitiesDirty,
         redoStack,
         undoStack: [...s.undoStack, op],
-        mapDirty: true,
+        mapDirty: op.changes.length > 0 ? true : s.mapDirty,
       }
     }),
 
@@ -275,6 +335,94 @@ export const useStore = create<TileForgeState>((set, get) => ({
   registryFileHandle: null,
   setMapFileHandle: (h) => set({ mapFileHandle: h }),
   setRegistryFileHandle: (h) => set({ registryFileHandle: h }),
+
+  // ── Entities ──
+  entities: [],
+  entityComments: [],
+  entityUnknownLines: [],
+  entitiesDirty: false,
+  selectedEntityId: null,
+  showEntities: true,
+  entitiesFileHandle: null,
+  setEntitiesFileHandle: (h) => set({ entitiesFileHandle: h }),
+
+  loadEntities: (entities, comments, unknownLines) =>
+    set(() => ({
+      entities,
+      entityComments: comments,
+      entityUnknownLines: unknownLines,
+      entitiesDirty: false,
+      selectedEntityId: null,
+    })),
+
+  clearEntities: () =>
+    set(() => ({
+      entities: [],
+      entityComments: [],
+      entityUnknownLines: [],
+      entitiesDirty: false,
+      selectedEntityId: null,
+      entitiesFileHandle: null,
+    })),
+
+  addEntity: (entity) =>
+    set((s) => {
+      const entities = [...s.entities, entity]
+      const ec: EntityChange = { action: 'add', before: null, after: entity }
+      return {
+        entities,
+        entitiesDirty: true,
+        undoStack: [...s.undoStack, { description: `Add ${entity.type}`, changes: [], entityChanges: [ec] }],
+        redoStack: [],
+      }
+    }),
+
+  updateEntity: (id, entity) =>
+    set((s) => {
+      const before = s.entities.find((e) => e.id === id)
+      if (!before) return s
+      const entities = s.entities.map((e) => (e.id === id ? entity : e))
+      const ec: EntityChange = { action: 'update', before, after: entity }
+      return {
+        entities,
+        entitiesDirty: true,
+        undoStack: [...s.undoStack, { description: `Update ${entity.type}`, changes: [], entityChanges: [ec] }],
+        redoStack: [],
+      }
+    }),
+
+  deleteEntity: (id) =>
+    set((s) => {
+      const before = s.entities.find((e) => e.id === id)
+      if (!before) return s
+      const entities = s.entities.filter((e) => e.id !== id)
+      const ec: EntityChange = { action: 'delete', before, after: before }
+      return {
+        entities,
+        entitiesDirty: true,
+        selectedEntityId: s.selectedEntityId === id ? null : s.selectedEntityId,
+        undoStack: [...s.undoStack, { description: `Delete ${before.type}`, changes: [], entityChanges: [ec] }],
+        redoStack: [],
+      }
+    }),
+
+  moveEntity: (id, x, y) =>
+    set((s) => {
+      const before = s.entities.find((e) => e.id === id)
+      if (!before) return s
+      const after = { ...before, x, y }
+      const entities = s.entities.map((e) => (e.id === id ? after : e))
+      const ec: EntityChange = { action: 'update', before, after }
+      return {
+        entities,
+        entitiesDirty: true,
+        undoStack: [...s.undoStack, { description: `Move ${before.type}`, changes: [], entityChanges: [ec] }],
+        redoStack: [],
+      }
+    }),
+
+  setSelectedEntity: (id) => set({ selectedEntityId: id }),
+  toggleShowEntities: () => set((s) => ({ showEntities: !s.showEntities })),
 
   // ── Quick Paint ──
   onBeforePaint: null,
