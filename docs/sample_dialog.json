@@ -1,0 +1,423 @@
+[
+  {
+    "tree_id": "tormund_dialogue",
+    "root": "greeting",
+    "nodes": {
+      "greeting": {
+        "text": "Tormund squints at you through the dim light.\n\"Another adventurer? The last one ran screaming from a goblin. A SINGLE goblin.\"\n\"What do you want?\"",
+        "choices": [
+          { "text": "I'm here to help with the darkness.", "next": "quest_intro", "reputation_change": 5, "conditions": [{ "type": "quest_stage", "op": "lt", "value": "2" }] },
+          { "text": "The mayor sent me your way.", "next": "quest_intro_after_mayor", "conditions": [{ "type": "quest_stage", "op": "gte", "value": "2" }] },
+          { "text": "Nice shop. Shame about the lighting.", "next": "humor_response", "reputation_change": 10 },
+          { "text": "I heard you lost your hammer?", "next": "hammer_quest" },
+          { "text": "Show me what you've got.", "next": "open_shop" },
+          { "text": "Nothing. Goodbye.", "next": "exit" }
+        ]
+      },
+      "quest_intro": {
+        "text": "Tormund raises an eyebrow.\n\"Help with the darkness, eh? You and every other fool who wanders in here.\"\n\"But if you're serious, talk to Mayor Aldric. He's been looking for someone brave enough. Or dumb enough.\"",
+        "choices": [
+          { "text": "I'll talk to him.", "next": "exit" },
+          { "text": "What about your shop?", "next": "open_shop" }
+        ]
+      },
+      "quest_intro_after_mayor": {
+        "text": "Tormund nods slowly.\n\"Aldric sent you, eh? Good. Means he thinks you're not completely useless.\"\n\"You'll need proper gear for what's out there. Take a look at what I've got.\"",
+        "choices": [
+          { "text": "Show me what you have.", "next": "open_shop" },
+          { "text": "Thanks, I'll prepare.", "next": "exit" }
+        ]
+      },
+      "humor_response": {
+        "text": "Tormund lets out a gravelly laugh.\n\"Ha! You're alright. Most people just cry about the fog.\"\n\"Tell you what -- I'll give you a fair deal. That's more than most get.\"",
+        "choices": [
+          { "text": "I appreciate that.", "next": "open_shop" },
+          { "text": "Thanks. I'll be going.", "next": "exit" }
+        ],
+        "effects": [
+          { "type": "reputation", "npc": "tormund", "value": 10 }
+        ]
+      },
+      "hammer_quest": {
+        "text": "Tormund's face darkens.\n\"My best hammer -- gone! Dropped it in the Whispering Woods when I was fleeing those blasted goblins.\"\n\"If you could find it and bring it back, I'd owe you a real favor.\"",
+        "choices": [
+          { "text": "I'll keep an eye out for it.", "next": "hammer_accept" },
+          { "text": "Maybe later.", "next": "exit" }
+        ]
+      },
+      "hammer_accept": {
+        "text": "\"You'd do that? It's a heavy thing, iron-bound with my mark on the handle. Should be somewhere near the old trail.\"\n\"Be careful out there.\"",
+        "choices": [
+          { "text": "I'll find it.", "next": "exit" }
+        ],
+        "effects": [
+          { "type": "quest", "npc": "start_side:side_tormunds_hammer", "value": 0 }
+        ]
+      },
+      "open_shop": {
+        "action": "open_merchant_ui"
+      },
+      "exit": {
+        "action": "close_dialogue"
+      }
+    }
+  },
+  {
+    "tree_id": "elara_dialogue",
+    "root": "greeting",
+    "nodes": {
+      "greeting": {
+        "text": "Elara looks up from a bundle of dried herbs.\n\"Oh! A visitor. I don't get many of those these days.\"\n\"The fog has been terrible for my garden, but I still have a few remedies if you need them.\"",
+        "choices": [
+          { "text": "What can you tell me about the fog?", "next": "fog_lore" },
+          { "text": "Do you need help gathering herbs?", "next": "herb_quest" },
+          { "text": "Do you have anything useful?", "next": "remedies" },
+          { "text": "Just passing through. Goodbye.", "next": "exit" }
+        ]
+      },
+      "fog_lore": {
+        "text": "Elara's eyes darken.\n\"It started a few months ago. Crept in from the east, slow at first. Now it swallows everything.\"\n\"The old stories say the Ascendant Spire once held it back. But nobody's been up there in ages.\"",
+        "choices": [
+          { "text": "The Ascendant Spire?", "next": "spire_lore" },
+          { "text": "Thanks for the information.", "next": "exit" }
+        ]
+      },
+      "spire_lore": {
+        "text": "\"A tower, east of here, past the Dark Forest. They say it channels light from above the fog.\"\n\"But the path is dangerous. The creatures in the fog... they're not natural.\"",
+        "choices": [
+          { "text": "I'll find a way.", "next": "exit", "reputation_change": 5 },
+          { "text": "Sounds like someone else's problem.", "next": "exit" }
+        ]
+      },
+      "herb_quest": {
+        "text": "Elara's eyes light up.\n\"Oh, would you? I need Moonpetal Herbs -- they only grow in the Whispering Woods now.\"\n\"Three would be enough to brew a proper remedy. They glow faintly blue in the dark.\"",
+        "choices": [
+          { "text": "I'll gather them for you.", "next": "herb_accept" },
+          { "text": "Maybe another time.", "next": "exit" }
+        ]
+      },
+      "herb_accept": {
+        "text": "\"Thank you so much! Look for them near fallen logs and stream banks.\"\n\"And please be careful -- the woods aren't safe anymore.\"",
+        "choices": [
+          { "text": "I'll be back with the herbs.", "next": "exit" }
+        ],
+        "effects": [
+          { "type": "quest", "npc": "start_side:side_elara_herbs", "value": 0 }
+        ]
+      },
+      "remedies": {
+        "text": "\"I'm afraid I don't have much to sell right now. The fog has ruined most of my stock.\"\n\"Come back later -- I might have something for you.\"",
+        "choices": [
+          { "text": "I understand. Goodbye.", "next": "exit" }
+        ]
+      },
+      "exit": {
+        "action": "close_dialogue"
+      }
+    }
+  },
+  {
+    "tree_id": "aldric_dialogue",
+    "root": "greeting",
+    "nodes": {
+      "greeting": {
+        "text": "Mayor Aldric adjusts his spectacles and regards you carefully.\n\"You must be new here. Welcome to Thornhollow -- what's left of it, anyway.\"\n\"We could use someone with your... enthusiasm.\"",
+        "conditions": [{ "type": "quest_stage", "op": "lt", "value": "2" }],
+        "fallback": "greeting_returning",
+        "choices": [
+          { "text": "What's going on here?", "next": "situation" },
+          { "text": "Tormund said you needed help.", "next": "quest_hook" },
+          { "text": "Just looking around. Goodbye.", "next": "exit" }
+        ]
+      },
+      "greeting_returning": {
+        "text": "Mayor Aldric nods as you approach.\n\"Ah, you're back. Have you made progress clearing the forest path?\"",
+        "conditions": [{ "type": "quest_stage", "op": "lt", "value": "4" }],
+        "fallback": "greeting_turnin",
+        "choices": [
+          { "text": "Working on it.", "next": "exit" },
+          { "text": "Tell me about the situation again.", "next": "situation" },
+          { "text": "Just checking in. Goodbye.", "next": "exit" }
+        ]
+      },
+      "greeting_turnin": {
+        "text": "Mayor Aldric's eyes widen as you enter.\n\"The forest path is clear? You've done Thornhollow a great service!\"\n\"As promised, here's your reward. You've more than earned it.\"",
+        "choices": [
+          { "text": "Happy to help.", "next": "exit" },
+          { "text": "What's next?", "next": "situation" }
+        ]
+      },
+      "situation": {
+        "text": "\"The fog grows thicker every week. Our light sources barely hold it back.\"\n\"Goblins have gotten bolder. Traders stopped coming. We're running low on everything.\"\n\"If someone doesn't do something soon...\"",
+        "choices": [
+          { "text": "How can I help?", "next": "quest_hook" },
+          { "text": "That sounds rough. Good luck.", "next": "exit" }
+        ]
+      },
+      "quest_hook": {
+        "text": "Aldric leans forward.\n\"There's an old path through the Dark Forest to the east. Beyond it lies the Ascendant Spire.\"\n\"The ancients used it to push back the darkness. If we could reactivate it...\"\n\"But first, we need someone to clear the forest path. The goblins have overrun it.\"",
+        "choices": [
+          { "text": "I'll clear the path.", "next": "quest_accept", "reputation_change": 10 },
+          { "text": "I need to prepare first.", "next": "exit" }
+        ]
+      },
+      "quest_accept": {
+        "text": "\"Excellent! Talk to Tormund the blacksmith first. Then head east and deal with the goblin camps in the Dark Forest.\"\n\"Come back when the path is clear. I'll make it worth your while.\"\n\"And be careful -- the fog plays tricks on the mind.\"",
+        "choices": [
+          { "text": "Consider it done.", "next": "exit" }
+        ]
+      },
+      "exit": {
+        "action": "close_dialogue"
+      }
+    }
+  },
+
+  {
+    "tree_id": "thalia_dialogue",
+    "root": "greeting",
+    "nodes": {
+      "greeting": {
+        "text": "A lean woman in forest-green garb looks up from sharpening an arrow.\n\"Careful where you step. These woods are crawling with goblins, and worse.\"\n\"Name's Thalia. I keep what order I can out here.\"",
+        "choices": [
+          { "text": "What's the situation in the forest?", "next": "forest_info" },
+          { "text": "I'm heading deeper. Any advice?", "next": "advice" },
+          { "text": "Just passing through.", "next": "exit" }
+        ]
+      },
+      "forest_info": {
+        "text": "\"The goblins have been breeding like rabbits. Brutes, shamans, the works.\"\n\"And there's something big near the old shrine -- a treant, twisted by the darkness.\"\n\"If you can deal with it, the path east to the mines should open up.\"",
+        "choices": [
+          { "text": "I'll handle it.", "next": "exit", "reputation_change": 5 },
+          { "text": "What's in the mines?", "next": "mines_info" }
+        ]
+      },
+      "mines_info": {
+        "text": "\"Gloomhollow Mines. Used to be a thriving operation before the fog rolled in.\"\n\"Now it's full of spiders and the walking dead. The miners never came back out.\"\n\"There's a fellow named Gruff near the entrance -- if he's still alive.\"",
+        "choices": [
+          { "text": "Thanks for the warning.", "next": "exit" }
+        ]
+      },
+      "advice": {
+        "text": "\"Stock up on potions. The wolves hunt in the dim areas where your light barely reaches.\"\n\"And watch for the dire wolves -- bigger, meaner, and they don't scare easy.\"",
+        "choices": [
+          { "text": "I'll be careful.", "next": "exit" }
+        ]
+      },
+      "exit": {
+        "action": "close_dialogue"
+      }
+    }
+  },
+
+  {
+    "tree_id": "gruff_dialogue",
+    "root": "greeting",
+    "nodes": {
+      "greeting": {
+        "text": "A stocky man sits against the cave wall, a pickaxe resting across his knees.\n\"Well I'll be. Another living soul. Thought I was the last one.\"\n\"Name's Gruff. Been trapped near this entrance since the dead started walking.\"",
+        "choices": [
+          { "text": "What happened here?", "next": "mine_story" },
+          { "text": "Are there others down there?", "next": "survivors" },
+          { "text": "I need to get through.", "next": "passage" },
+          { "text": "Stay safe.", "next": "exit" }
+        ]
+      },
+      "mine_story": {
+        "text": "\"We hit something deep in the tunnels. An old chamber, sealed up tight.\"\n\"The foreman, he insisted we break through. Next day, the dead started rising.\"\n\"Miners, old bones from the walls... all of 'em up and walking.\"",
+        "choices": [
+          { "text": "Where's the foreman now?", "next": "foreman_info" },
+          { "text": "I'll deal with it.", "next": "exit", "reputation_change": 5 }
+        ]
+      },
+      "foreman_info": {
+        "text": "\"Dead. Or undead, more like. Saw him shambling around the deep chamber.\"\n\"He's bigger now. Stronger. Whatever's down there... changed him.\"\n\"If you're heading that way, be ready for a real fight.\"",
+        "choices": [
+          { "text": "I'll put him to rest.", "next": "exit", "reputation_change": 10 }
+        ]
+      },
+      "survivors": {
+        "text": "\"If there were, they ain't anymore. I heard screaming the first night. Then nothing.\"\n\"Spiders moved in too. Giant ones. Like the darkness brought 'em.\"",
+        "choices": [
+          { "text": "That's grim.", "next": "exit" }
+        ]
+      },
+      "passage": {
+        "text": "\"The main tunnel goes straight in. Watch for cave-ins -- the supports are rotting.\"\n\"Deep down there's a stairway. Goes to some kind of old temple.\"\n\"That's where the real trouble started, I reckon.\"",
+        "choices": [
+          { "text": "Thanks for the tip.", "next": "exit" }
+        ]
+      },
+      "exit": {
+        "action": "close_dialogue"
+      }
+    }
+  },
+
+  {
+    "tree_id": "sera_dialogue",
+    "root": "greeting",
+    "nodes": {
+      "greeting": {
+        "text": "A robed woman kneels before a cracked altar, faint light flickering around her.\n\"You shouldn't be here. This place is... no longer safe.\"\n\"I am Sera. I was keeper of this temple, before the darkness claimed it.\"",
+        "choices": [
+          { "text": "What is this place?", "next": "temple_lore" },
+          { "text": "What happened to the guardians?", "next": "guardian_info" },
+          { "text": "I'm here to help.", "next": "help" },
+          { "text": "I'll be careful.", "next": "exit" }
+        ]
+      },
+      "temple_lore": {
+        "text": "\"The Undercroft. An ancient temple built to house a fragment of the Dawnstone.\"\n\"The light it held kept the darkness at bay for centuries.\"\n\"But when the fragment was stolen, the guardians turned. They protect an empty shrine now.\"",
+        "choices": [
+          { "text": "Who took the fragment?", "next": "fragment_info" },
+          { "text": "Can the guardians be stopped?", "next": "guardian_info" }
+        ]
+      },
+      "fragment_info": {
+        "text": "\"I don't know. Something from the swamp -- a knight wreathed in shadow.\"\n\"He came through the portal to the east. The guardians couldn't stop him.\"\n\"The fragment's power... I can still feel it, faintly. It's in the Blackmoor.\"",
+        "choices": [
+          { "text": "I'll find it.", "next": "exit", "reputation_change": 10 }
+        ]
+      },
+      "guardian_info": {
+        "text": "\"The guardians were noble once. Now they attack anything that moves.\"\n\"And the spirits of the old priests wander the halls, corrupted and angry.\"\n\"Be wary of the Undead Foreman too. He found his way down from the mines.\"",
+        "choices": [
+          { "text": "I'll handle them.", "next": "exit" }
+        ]
+      },
+      "help": {
+        "text": "\"If you truly wish to help, find the Dawnstone fragment. It was taken east, through the portal.\"\n\"The Blackmoor is a dangerous place, but the fragment must be recovered.\"\n\"Without it, the darkness will only grow stronger.\"",
+        "choices": [
+          { "text": "I'll retrieve it.", "next": "exit", "reputation_change": 10 }
+        ]
+      },
+      "exit": {
+        "action": "close_dialogue"
+      }
+    }
+  },
+
+  {
+    "tree_id": "marsh_dialogue",
+    "root": "greeting",
+    "nodes": {
+      "greeting": {
+        "text": "An old man hunches over a bubbling pot near a sputtering campfire.\n\"Heh. You've got guts coming this deep into the Blackmoor.\"\n\"They call me Old Marsh. Been living in this swamp longer than most remember.\"",
+        "choices": [
+          { "text": "What can you tell me about this place?", "next": "swamp_info" },
+          { "text": "I need supplies.", "next": "open_shop" },
+          { "text": "I'm looking for a Dawnstone fragment.", "next": "fragment" },
+          { "text": "Just resting. Goodbye.", "next": "exit" }
+        ]
+      },
+      "swamp_info": {
+        "text": "\"The Blackmoor was always dark, but now? It's alive with things that shouldn't be.\"\n\"Bog lurkers in the mud, wraiths in the fog, and stalkers that move without sound.\"\n\"And the Knight... don't go near the ruins to the southeast unless you're ready to die.\"",
+        "choices": [
+          { "text": "Tell me about the Knight.", "next": "knight_info" },
+          { "text": "I'll be careful.", "next": "exit" }
+        ]
+      },
+      "knight_info": {
+        "text": "\"The Umbral Knight. Used to be human, they say. Now he's something else.\"\n\"He holds court in the old ruins, surrounded by darkness so thick light can't touch it.\"\n\"Whatever power he's got, it came from something he stole. Something that glows.\"",
+        "choices": [
+          { "text": "The Dawnstone fragment.", "next": "fragment" },
+          { "text": "I'll deal with him.", "next": "exit", "reputation_change": 5 }
+        ]
+      },
+      "fragment": {
+        "text": "\"Aye, I've seen it. The Knight keeps it close. It pulses with light even he can't fully smother.\"\n\"You want it? You'll have to go through him. And everything between here and there.\"\n\"Stock up first. I've got the strongest potions you'll find this side of the fog.\"",
+        "choices": [
+          { "text": "Show me what you have.", "next": "open_shop" },
+          { "text": "I'll be ready.", "next": "exit" }
+        ]
+      },
+      "open_shop": {
+        "action": "open_merchant_ui"
+      },
+      "exit": {
+        "action": "close_dialogue"
+      }
+    }
+  },
+  {
+    "tree_id": "thorne_inciting_indoor",
+    "root": "arrival",
+    "nodes": {
+      "arrival": {
+        "text": "Thorne sets a cloth-wrapped bundle on the table without ceremony.\n\n\"Your brother Rowan hasn't returned. Three days now. No one else is going after him.\"\n\nHe looks at you directly.\n\n\"I suspect you already know that.\"",
+        "choices": [
+          { "text": "What's in the cloth?", "next": "shard_tease" },
+          { "text": "[Say nothing]", "next": "shard_tease" }
+        ]
+      },
+      "shard_tease": {
+        "text": "He unwraps the cloth. Inside is a crystal fragment, palm-sized, irregular, catches the dim light and holds it.\n\n\"This was in the archive basement, in a box I'd never opened. Shame on me.\"\n\nHe wraps it back up carefully.\n\n\"Come outside. I'll show you what it does.\"",
+        "action": "close_dialogue"
+      }
+    }
+  },
+  {
+    "tree_id": "thorne_inciting_outdoor",
+    "root": "shard_demo",
+    "nodes": {
+      "shard_demo": {
+        "text": "Thorne holds the shard up. The fog draws back around him in a pale circle.\n\n\"I noticed it by accident. It pushes the veil back better than any torch.\"\n\nHe holds it out to you.\n\n\"Take it. You need it more than I do.\"",
+        "action": "close_dialogue"
+      }
+    }
+  },
+  {
+    "tree_id": "thorne_inciting_outdoor_2",
+    "root": "shard_info",
+    "nodes": {
+      "shard_info": {
+        "text": "\"Well look at that! I held it, barely flickered.\"\n\nHis eyebrows furrow.\n\n\"You touch it and it lights up like a sun beam. Curious ...\" \n\nThe shard is warm in your hands.",
+        "choices": [
+          { "text": "Will you come with me?", "next": "why_not_thorne" },
+          { "text": "I'll find them.", "next": "depart" }
+        ]
+      },
+      "why_not_thorne": {
+        "text": "He glances at his walking stick. Then at you.\n\n\"I'm a historian with bad knees and worse eyes. You are ... whatever you are.\"\n\nA pause.\n\n\"Also, someone has to stay and argue with the dead authors.\"",
+        "choices": [
+          { "text": "I'll find them.", "next": "depart" }
+        ]
+      },
+      "depart": {
+        "text": "Thorne is still staring at the circle of light around you.\n\n\"Find your fool brother. And do try not to die. I'm running out of people who can carry heavy boxes.\"",
+        "action": "close_dialogue"
+      }
+    }
+  },
+  {
+    "tree_id": "thorne_dialogue",
+    "root": "greeting",
+    "nodes": {
+      "greeting": {
+        "text": "Thorne looks up from a stack of papers, squinting over his spectacles.\n\n\"You're still here. Or back. Hard to tell.\"\n\nHe sets down his quill.\n\n\"The archive doesn't sort itself, you know. What is it?\"",
+        "choices": [
+          { "text": "What can you tell me about the shard?", "next": "shard_lore", "conditions": [{ "type": "flag", "key": "has_shard", "op": "set" }] },
+          { "text": "Any news in town?", "next": "town_news" },
+          { "text": "Just checking in.", "next": "dismissal" }
+        ]
+      },
+      "shard_lore": {
+        "text": "\"What can I tell you?\" He holds up a finger. \"Almost nothing. And I've read everything in this archive twice.\"\n\n\"There's a reference, one line, to something called 'The Great Effulgence.' The author then devotes three pages to his lunch.\"\n\n\"I'm working on it.\"",
+        "choices": [
+          { "text": "Keep at it.", "next": "dismissal" }
+        ]
+      },
+      "town_news": {
+        "text": "\"News. Right.\" He waves a hand toward the window.\n\n\"The baker is inexplicably cheerful, as always. The gate guards are feuding over a card debt. The fog hasn't retreated.\"\n\n\"There. That's the news.\"",
+        "choices": [
+          { "text": "Thanks, Thorne.", "next": "dismissal" }
+        ]
+      },
+      "dismissal": {
+        "text": "\"Go find your sibling. And try not to die out there. You're one of three people who can reach the top shelf.\"",
+        "action": "close_dialogue"
+      }
+    }
+  }
+]

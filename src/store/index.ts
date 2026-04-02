@@ -6,7 +6,9 @@ import type {
   Operation,
   Entity,
   EntityChange,
+  RGBA,
 } from '../types'
+import type { NpcVisualData, NpcCell, NpcSpriteState } from '../types/npc'
 
 export interface TileForgeState {
   // ── Registry Slice ──
@@ -87,6 +89,33 @@ export interface TileForgeState {
   playerOverlayPos: { x: number; y: number } | null
   setPlayerOverlay: (on: boolean) => void
   setPlayerOverlayPos: (pos: { x: number; y: number } | null) => void
+
+  // ── Editor Mode ──
+  editorMode: 'map' | 'npc'
+  setEditorMode: (mode: 'map' | 'npc') => void
+
+  // ── NPC Slice ──
+  npcs: NpcVisualData[]
+  selectedNpcId: string | null
+  npcsDirty: boolean
+  npcFileHandle: FileSystemFileHandle | null
+  npcSelectedCell: { target: string; row: number; col: number } | null
+  npcActiveState: string
+  npcPaintMode: 'glyph' | 'fg' | 'bg'
+  npcCurrentGlyph: string
+  npcCurrentFg: RGBA
+  npcCurrentBg: RGBA
+  setNpcFileHandle: (h: FileSystemFileHandle | null) => void
+  loadNpcs: (npcs: NpcVisualData[]) => void
+  selectNpc: (id: string | null) => void
+  setNpcCell: (target: 'sprite' | 'portrait', state: string | null, row: number, col: number, cell: Partial<NpcCell>) => void
+  setNpcPaintMode: (mode: 'glyph' | 'fg' | 'bg') => void
+  setNpcCurrentGlyph: (ch: string) => void
+  setNpcCurrentFg: (c: RGBA) => void
+  setNpcCurrentBg: (c: RGBA) => void
+  setNpcSelectedCell: (pos: { target: string; row: number; col: number } | null) => void
+  setNpcActiveState: (s: string) => void
+  copyNpcState: (from: string, to: string) => void
 }
 
 export const useStore = create<TileForgeState>((set, get) => ({
@@ -433,4 +462,85 @@ export const useStore = create<TileForgeState>((set, get) => ({
   playerOverlayPos: null,
   setPlayerOverlay: (on) => set({ playerOverlay: on, playerOverlayPos: on ? null : null }),
   setPlayerOverlayPos: (pos) => set({ playerOverlayPos: pos }),
+
+  // ── Editor Mode ──
+  editorMode: 'map',
+  setEditorMode: (mode) => set({ editorMode: mode }),
+
+  // ── NPC ──
+  npcs: [],
+  selectedNpcId: null,
+  npcsDirty: false,
+  npcFileHandle: null,
+  npcSelectedCell: null,
+  npcActiveState: 'idle',
+  npcPaintMode: 'glyph',
+  npcCurrentGlyph: ' ',
+  npcCurrentFg: { r: 255, g: 255, b: 255, a: 255 },
+  npcCurrentBg: { r: 0, g: 0, b: 0, a: 0 },
+  setNpcFileHandle: (h) => set({ npcFileHandle: h }),
+
+  loadNpcs: (npcs) =>
+    set(() => ({
+      npcs,
+      selectedNpcId: npcs.length > 0 ? npcs[0].id : null,
+      npcsDirty: false,
+      npcSelectedCell: null,
+    })),
+
+  selectNpc: (id) => set({ selectedNpcId: id, npcSelectedCell: null }),
+
+  setNpcCell: (target, state, row, col, cellUpdate) =>
+    set((s) => {
+      const npc = s.npcs.find((n) => n.id === s.selectedNpcId)
+      if (!npc) return s
+
+      const updateGrid = (grid: NpcSpriteState) => {
+        const newRows = grid.rows.map((r) => [...r])
+        if (row < newRows.length && col < (newRows[row]?.length ?? 0)) {
+          newRows[row][col] = { ...newRows[row][col], ...cellUpdate }
+        }
+        return { ...grid, rows: newRows }
+      }
+
+      let updatedNpc: NpcVisualData
+      if (target === 'sprite' && state) {
+        const updatedSprite = { ...npc.sprite }
+        updatedSprite[state] = updateGrid(npc.sprite[state])
+        updatedNpc = { ...npc, sprite: updatedSprite }
+      } else if (target === 'portrait' && npc.portrait) {
+        updatedNpc = { ...npc, portrait: updateGrid(npc.portrait) }
+      } else {
+        return s
+      }
+
+      return {
+        npcs: s.npcs.map((n) => (n.id === s.selectedNpcId ? updatedNpc : n)),
+        npcsDirty: true,
+      }
+    }),
+
+  setNpcPaintMode: (mode) => set({ npcPaintMode: mode }),
+  setNpcCurrentGlyph: (ch) => set({ npcCurrentGlyph: ch }),
+  setNpcCurrentFg: (c) => set({ npcCurrentFg: c }),
+  setNpcCurrentBg: (c) => set({ npcCurrentBg: c }),
+  setNpcSelectedCell: (pos) => set({ npcSelectedCell: pos }),
+  setNpcActiveState: (s) => set({ npcActiveState: s }),
+
+  copyNpcState: (from, to) =>
+    set((s) => {
+      const npc = s.npcs.find((n) => n.id === s.selectedNpcId)
+      if (!npc) return s
+      const source = npc.sprite[from]
+      const copy = {
+        ...source,
+        rows: source.rows.map((row) => row.map((cell) => ({ ...cell }))),
+      }
+      const updatedSprite = { ...npc.sprite, [to]: copy }
+      const updatedNpc = { ...npc, sprite: updatedSprite }
+      return {
+        npcs: s.npcs.map((n) => (n.id === s.selectedNpcId ? updatedNpc : n)),
+        npcsDirty: true,
+      }
+    }),
 }))

@@ -17,18 +17,19 @@ export function drawCheckerboard(
   y: number,
   w: number,
   h: number,
+  checkSize: number = CHECK_SIZE,
 ): void {
   const light = '#444444'
   const dark = '#333333'
-  for (let cy = 0; cy < h; cy += CHECK_SIZE) {
-    for (let cx = 0; cx < w; cx += CHECK_SIZE) {
-      const isLight = ((Math.floor(cx / CHECK_SIZE) + Math.floor(cy / CHECK_SIZE)) % 2) === 0
+  for (let cy = 0; cy < h; cy += checkSize) {
+    for (let cx = 0; cx < w; cx += checkSize) {
+      const isLight = ((Math.floor(cx / checkSize) + Math.floor(cy / checkSize)) % 2) === 0
       ctx.fillStyle = isLight ? light : dark
       ctx.fillRect(
         x + cx,
         y + cy,
-        Math.min(CHECK_SIZE, w - cx),
-        Math.min(CHECK_SIZE, h - cy),
+        Math.min(checkSize, w - cx),
+        Math.min(checkSize, h - cy),
       )
     }
   }

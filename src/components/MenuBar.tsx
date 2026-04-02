@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import { parseRegistry, serializeRegistry } from '../io/registryFile'
 import { parseTerrain, serializeTerrain } from '../io/terrainFile'
 import { parseEntities, serializeEntities } from '../io/entitiesFile'
+import { parseNpcFile, serializeNpcFile } from '../io/npcFile'
 import { importCSharpRegistry } from '../io/csharpImporter'
 import { getRecentFiles, addRecentFile, clearRecentFiles } from '../utils/recentFiles'
 import type { RecentEntry } from '../utils/recentFiles'
@@ -266,6 +267,68 @@ export function MenuBar() {
         if (!handle) return
         store.getState().setEntitiesFileHandle(handle)
         store.setState({ entitiesDirty: false })
+      },
+    },
+    { label: '—', action: () => {} },
+    {
+      label: 'Open NPC File…',
+      action: async () => {
+        setOpenMenu(null)
+        try {
+          const [handle] = await (window as any).showOpenFilePicker({
+            types: [{ description: 'NPC JSON', accept: { 'application/json': ['.json'] } }],
+          })
+          if (!handle) return
+          const file = await handle.getFile()
+          const text = await file.text()
+          const npcs = parseNpcFile(text)
+          store.getState().loadNpcs(npcs)
+          store.getState().setNpcFileHandle(handle)
+          store.getState().setEditorMode('npc')
+        } catch {
+          // User cancelled
+        }
+      },
+    },
+    {
+      label: 'Save NPC File',
+      action: async () => {
+        setOpenMenu(null)
+        const { npcs, npcFileHandle } = store.getState()
+        if (npcs.length === 0) return
+        const text = serializeNpcFile(npcs)
+        if (npcFileHandle) {
+          await writeToHandle(npcFileHandle, text)
+        } else {
+          const handle = await saveWithPicker(text, 'npcs.json', [
+            { description: 'NPC JSON', accept: { 'application/json': ['.json'] } },
+          ])
+          if (!handle) return
+          store.getState().setNpcFileHandle(handle)
+        }
+        store.setState({ npcsDirty: false })
+      },
+    },
+    {
+      label: 'Save NPC File As…',
+      action: async () => {
+        setOpenMenu(null)
+        const { npcs } = store.getState()
+        if (npcs.length === 0) return
+        const text = serializeNpcFile(npcs)
+        const handle = await saveWithPicker(text, 'npcs.json', [
+          { description: 'NPC JSON', accept: { 'application/json': ['.json'] } },
+        ])
+        if (!handle) return
+        store.getState().setNpcFileHandle(handle)
+        store.setState({ npcsDirty: false })
+      },
+    },
+    {
+      label: 'Back to Map Editor',
+      action: () => {
+        store.getState().setEditorMode('map')
+        setOpenMenu(null)
       },
     },
     { label: '—', action: () => {} },

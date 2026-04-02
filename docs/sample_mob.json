@@ -1,0 +1,53 @@
+[
+  {
+    "id": "rat",
+    "name": "Rat",
+    "level_range": [1, 2],
+    "stats": {
+      "hp": 40,
+      "sp": 0,
+      "strength": 3,
+      "intelligence": 1,
+      "armor": 0
+    },
+    "damage_type": "physical",
+    "abilities": ["rat_bite"],
+    "ai_triggers": [
+      { "condition": "self_hp_below_pct", "value": 15, "action": "flee" },
+      { "condition": "target_in_range", "value": 2, "action": "use_ability", "ability": "rat_bite" },
+      { "condition": "target_exists", "action": "chase" }
+    ],
+    "loot_table": "rat_loot",
+    "respawn_seconds": 300,
+    "xp_reward": 3,
+    "gold_reward_range": [0, 3],
+    "ascii_art": {
+      "idle":   ["  (\\ ", 
+                 "oo  )",
+                 "\"\"||\"\""],
+      "moving": ["  (\\ ", "oo  )", "\"\"/\\\"\""]
+    },
+    "fg_color": "SaddleBrown",
+    "bg_color": "Transparent",
+    "fg_palette": {
+      "A": "SaddleBrown",
+      "B": "#654321",
+      "C": "#FFB6C1",
+      "D": "#333333"
+    },
+    "fg_map": {
+      "idle":   ["  AA ", "CC  B", "DDDDDD"],
+      "moving": ["  AA ", "CC  B", "DDDDDD"]
+    },
+    "bg_palette": {
+      "X": "#3a2a1a"
+    },
+    "bg_map": {
+      "idle":   ["  XX ", "XX  X", "      "],
+      "moving": ["  XX ", "XX  X", "      "]
+    },
+    "move_speed": 1.3,
+    "aggro_radius": 12,
+    "leash_radius": 30
+  }
+]

@@ -1,0 +1,66 @@
+{
+  "cutscenes": [
+    {
+      "id": "game_opening",
+      "trigger": {
+        "type": "zone_entry",
+        "zone_id": "home_house",
+        "flag_absent": "intro_seen"
+      },
+      "steps": [
+        { "action": "wait", "duration": 1.5 },
+        { "action": "banner", "text": "Veilbreak", "color": "White", "duration": 4.0 },
+        { "action": "wait", "duration": 1.5 },
+
+        { "action": "play_sfx", "text": "DoorOpen" },
+        { "action": "spawn_npc", "entity_id": "elder_thorne", "x": 5.0, "y": 17.0 },
+        { "action": "camera_lock", "entity_type": "npc", "entity_id": "elder_thorne", "speed": 8.0 },
+        { "action": "move", "entity_type": "npc", "entity_id": "elder_thorne", "x": 5.0, "y": 12.0, "speed": 3.0 },
+        { "action": "wait", "duration": 0.3 },
+
+        { "action": "sprite_state", "entity_type": "npc", "entity_id": "elder_thorne", "state": "talking" },
+        { "action": "dialogue", "dialogue_tree": "thorne_inciting_indoor", "npc_id": "elder_thorne" },
+        { "action": "sprite_state", "entity_type": "npc", "entity_id": "elder_thorne", "state": "idle" },
+
+        { "action": "camera_release" },
+        { "action": "move", "entity_type": "npc", "entity_id": "elder_thorne", "x": 5.0, "y": 19.0, "speed": 3.0, "parallel": true },
+        { "action": "move", "entity_type": "player", "x": 5.0, "y": 19.0, "speed": 3.0, "parallel": true },
+        { "action": "wait", "duration": 0.3 },
+
+        { "action": "zone_transition", "zone_id": "home", "target_x": 17.0, "target_y": 22.0 },
+        { "action": "set_light", "entity_type": "player", "radius": 0.0 },
+        { "action": "spawn_npc", "entity_id": "elder_thorne", "x": 17.0, "y": 22.0 },
+        { "action": "set_light", "entity_type": "npc", "entity_id": "elder_thorne", "radius": 8.0 },
+        { "action": "wait", "duration": 0.5 },
+
+        { "action": "camera_lock", "entity_type": "player", "speed": 8.0 },
+        { "action": "move", "entity_type": "npc", "entity_id": "elder_thorne", "x": 34.0, "y": 27.0, "speed": 2.0, "parallel": true },
+        { "action": "move", "entity_type": "player", "x": 30.0, "y": 27.0, "speed": 2.0, "parallel": true },
+        { "action": "wait", "duration": 0.5 },
+
+        { "action": "sprite_state", "entity_type": "npc", "entity_id": "elder_thorne", "state": "talking" },
+        { "action": "dialogue", "dialogue_tree": "thorne_inciting_outdoor", "npc_id": "elder_thorne" },
+        { "action": "sprite_state", "entity_type": "npc", "entity_id": "elder_thorne", "state": "idle" },
+
+        { "action": "wait", "duration": 1.0 },
+        { "action": "remove_light", "entity_type": "npc", "entity_id": "elder_thorne" },
+        { "action": "set_light", "entity_type": "player", "radius": 15.0 },
+        { "action": "wait", "duration": 1.0 },
+
+        { "action": "sprite_state", "entity_type": "npc", "entity_id": "elder_thorne", "state": "talking" },
+        { "action": "dialogue", "dialogue_tree": "thorne_inciting_outdoor_2", "npc_id": "elder_thorne" },
+        { "action": "sprite_state", "entity_type": "npc", "entity_id": "elder_thorne", "state": "idle" },
+
+        { "action": "set_flag", "flag": "has_shard", "value": "true" },
+        { "action": "set_flag", "flag": "intro_seen", "value": "true" },
+        { "action": "wait", "duration": 1.0 },
+
+        { "action": "move", "entity_type": "npc", "entity_id": "elder_thorne", "x": 35.0, "y": 24.0, "speed": 4.0 },
+        { "action": "move", "entity_type": "npc", "entity_id": "elder_thorne", "x": 63.0, "y": 15.0, "speed": 4.0 },
+        { "action": "move", "entity_type": "npc", "entity_id": "elder_thorne", "x": 63.0, "y": 2.0, "speed": 5.0 },
+        { "action": "camera_release" },
+        { "action": "despawn", "entity_type": "npc", "entity_id": "elder_thorne" }
+      ]
+    }
+  ]
+}

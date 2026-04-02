@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import { serializeTerrain } from '../io/terrainFile'
 import { serializeEntities } from '../io/entitiesFile'
 import { serializeRegistry } from '../io/registryFile'
+import { serializeNpcFile } from '../io/npcFile'
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
@@ -33,11 +34,38 @@ export function useKeyboardShortcuts() {
         return
       }
 
-      // Ctrl+S — Save map + entities (reuses file handle if available)
+      // Ctrl+S — Save (context-dependent)
       if (ctrl && e.key === 's') {
         e.preventDefault()
         const s = useStore.getState()
-        // Save map
+
+        // NPC mode: save NPC file
+        if (s.editorMode === 'npc') {
+          if (s.npcs.length > 0) {
+            const text = serializeNpcFile(s.npcs)
+            if (s.npcFileHandle) {
+              s.npcFileHandle.createWritable().then(async (w) => {
+                await w.write(text)
+                await w.close()
+                useStore.setState({ npcsDirty: false })
+              })
+            } else {
+              (window as any).showSaveFilePicker({
+                suggestedName: 'npcs.json',
+                types: [{ description: 'NPC JSON', accept: { 'application/json': ['.json'] } }],
+              }).then(async (handle: FileSystemFileHandle) => {
+                const w = await handle.createWritable()
+                await w.write(text)
+                await w.close()
+                useStore.getState().setNpcFileHandle(handle)
+                useStore.setState({ npcsDirty: false })
+              }).catch(() => {})
+            }
+          }
+          return
+        }
+
+        // Map mode: save map + entities
         if (s.cells.length > 0) {
           const text = serializeTerrain(s.cells)
           if (s.mapFileHandle) {
@@ -104,6 +132,55 @@ export function useKeyboardShortcuts() {
         const s = useStore.getState()
         s.setZoom(s.zoom - 0.1)
         return
+      }
+
+      // ── NPC mode shortcuts ──
+      if (useStore.getState().editorMode === 'npc') {
+        const ns = useStore.getState()
+
+        // Escape — deselect NPC cell
+        if (e.key === 'Escape') {
+          ns.setNpcSelectedCell(null)
+          return
+        }
+
+        // Arrow keys — move selected cell
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && ns.npcSelectedCell) {
+          e.preventDefault()
+          const { target, row, col } = ns.npcSelectedCell
+          const npc = ns.npcs.find((n) => n.id === ns.selectedNpcId)
+          const grid = target === 'portrait'
+            ? npc?.portrait
+            : npc?.sprite[target]
+          if (!grid) return
+          let nr = row, nc = col
+          if (e.key === 'ArrowUp') nr = Math.max(0, row - 1)
+          if (e.key === 'ArrowDown') nr = Math.min(grid.height - 1, row + 1)
+          if (e.key === 'ArrowLeft') nc = Math.max(0, col - 1)
+          if (e.key === 'ArrowRight') nc = Math.min(grid.width - 1, col + 1)
+          ns.setNpcSelectedCell({ target, row: nr, col: nc })
+          return
+        }
+
+        // G/F/B — switch paint mode
+        if (e.key.toLowerCase() === 'g' && !ctrl) { ns.setNpcPaintMode('glyph'); return }
+        if (e.key.toLowerCase() === 'f' && !ctrl) { ns.setNpcPaintMode('fg'); return }
+        if (e.key.toLowerCase() === 'b' && !ctrl) { ns.setNpcPaintMode('bg'); return }
+
+        // Typing a character in glyph mode — set current glyph
+        if (ns.npcPaintMode === 'glyph' && e.key.length === 1 && !ctrl) {
+          ns.setNpcCurrentGlyph(e.key)
+          // Also paint the selected cell if one is selected
+          if (ns.npcSelectedCell && ns.selectedNpcId) {
+            const { target, row, col } = ns.npcSelectedCell
+            const storeTarget = target === 'portrait' ? 'portrait' as const : 'sprite' as const
+            const state = target === 'portrait' ? null : target
+            ns.setNpcCell(storeTarget, state, row, col, { glyph: e.key })
+          }
+          return
+        }
+
+        return // Don't fall through to map shortcuts in NPC mode
       }
 
       // Escape — clear selection / cancel paste mode
