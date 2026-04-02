@@ -1,19 +1,19 @@
 import { useCallback } from 'react'
 import { useStore } from '../../store'
-import { NpcGridEditor } from './NpcGridEditor'
-import type { NpcVisualData, NpcCell } from '../../types/npc'
+import { SpriteGridCanvas } from './SpriteGridCanvas'
+import type { SpriteVisualData, SpriteCell } from '../../types/sprite'
 
-export function NpcPortraitEditor({ npc }: { npc: NpcVisualData }) {
-  const selectedCell = useStore((s) => s.npcSelectedCell)
-  const setSelectedCell = useStore((s) => s.setNpcSelectedCell)
-  const paintMode = useStore((s) => s.npcPaintMode)
-  const currentGlyph = useStore((s) => s.npcCurrentGlyph)
-  const currentFg = useStore((s) => s.npcCurrentFg)
-  const currentBg = useStore((s) => s.npcCurrentBg)
-  const setNpcCell = useStore((s) => s.setNpcCell)
-  const setCurrentGlyph = useStore((s) => s.setNpcCurrentGlyph)
-  const setCurrentFg = useStore((s) => s.setNpcCurrentFg)
-  const setCurrentBg = useStore((s) => s.setNpcCurrentBg)
+export function SpritePortraitEditor({ npc }: { npc: SpriteVisualData }) {
+  const selectedCell = useStore((s) => s.spriteSelectedCell)
+  const setSelectedCell = useStore((s) => s.setSpriteSelectedCell)
+  const paintMode = useStore((s) => s.spritePaintMode)
+  const currentGlyph = useStore((s) => s.spriteCurrentGlyph)
+  const currentFg = useStore((s) => s.spriteCurrentFg)
+  const currentBg = useStore((s) => s.spriteCurrentBg)
+  const setSpriteCell = useStore((s) => s.setSpriteCell)
+  const setCurrentGlyph = useStore((s) => s.setSpriteCurrentGlyph)
+  const setCurrentFg = useStore((s) => s.setSpriteCurrentFg)
+  const setCurrentBg = useStore((s) => s.setSpriteCurrentBg)
 
   const paintUpdate = useCallback(() => {
     return paintMode === 'glyph'
@@ -26,20 +26,20 @@ export function NpcPortraitEditor({ npc }: { npc: NpcVisualData }) {
   const handleCellClick = useCallback(
     (row: number, col: number) => {
       setSelectedCell({ target: 'portrait', row, col })
-      setNpcCell('portrait', null, row, col, paintUpdate())
+      setSpriteCell('portrait', null, row, col, paintUpdate())
     },
-    [setSelectedCell, setNpcCell, paintUpdate],
+    [setSelectedCell, setSpriteCell, paintUpdate],
   )
 
   const handleCellPaint = useCallback(
     (row: number, col: number) => {
-      setNpcCell('portrait', null, row, col, paintUpdate())
+      setSpriteCell('portrait', null, row, col, paintUpdate())
     },
-    [setNpcCell, paintUpdate],
+    [setSpriteCell, paintUpdate],
   )
 
   const handleRightClick = useCallback(
-    (_row: number, _col: number, cell: NpcCell) => {
+    (_row: number, _col: number, cell: SpriteCell) => {
       if (paintMode === 'glyph') setCurrentGlyph(cell.glyph)
       else if (paintMode === 'fg') setCurrentFg(cell.fg)
       else setCurrentBg(cell.bg)
@@ -64,7 +64,7 @@ export function NpcPortraitEditor({ npc }: { npc: NpcVisualData }) {
 
   return (
     <div className="mt-4">
-      <NpcGridEditor
+      <SpriteGridCanvas
         grid={portrait.rows}
         width={portrait.width}
         height={portrait.height}

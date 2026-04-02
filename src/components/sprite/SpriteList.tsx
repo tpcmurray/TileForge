@@ -1,9 +1,9 @@
 import { useStore } from '../../store'
 
-export function NpcList() {
-  const npcs = useStore((s) => s.npcs)
-  const selectedNpcId = useStore((s) => s.selectedNpcId)
-  const selectNpc = useStore((s) => s.selectNpc)
+export function SpriteList() {
+  const sprites = useStore((s) => s.sprites)
+  const selectedSpriteId = useStore((s) => s.selectedSpriteId)
+  const selectSprite = useStore((s) => s.selectSprite)
 
   return (
     <div
@@ -18,11 +18,11 @@ export function NpcList() {
         className="text-[10px] font-mono font-semibold uppercase tracking-wide px-3 py-2"
         style={{ color: 'var(--text-dim)', borderBottom: '1px solid var(--border)' }}
       >
-        NPCs ({npcs.length})
+        Sprites ({sprites.length})
       </div>
       <div className="flex-1 overflow-y-auto">
-        {npcs.map((npc) => {
-          const selected = npc.id === selectedNpcId
+        {sprites.map((npc) => {
+          const selected = npc.id === selectedSpriteId
           return (
             <button
               key={npc.id}
@@ -33,7 +33,7 @@ export function NpcList() {
                 border: 'none',
                 borderBottom: '1px solid var(--border)',
               }}
-              onClick={() => selectNpc(npc.id)}
+              onClick={() => selectSprite(npc.id)}
             >
               <div className="font-semibold truncate">{npc.name || npc.id}</div>
               {npc.title && (
@@ -44,9 +44,9 @@ export function NpcList() {
             </button>
           )
         })}
-        {npcs.length === 0 && (
+        {sprites.length === 0 && (
           <div className="px-3 py-4 text-xs font-mono" style={{ color: 'var(--text-dim)' }}>
-            No NPCs loaded
+            No sprites loaded
           </div>
         )}
       </div>

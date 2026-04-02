@@ -1,19 +1,19 @@
 import { useStore } from '../../store'
-import { NpcList } from './NpcList'
-import { NpcSpriteEditor } from './NpcSpriteEditor'
-import { NpcPortraitEditor } from './NpcPortraitEditor'
-import { NpcCellProperties } from './NpcCellProperties'
+import { SpriteList } from './SpriteList'
+import { SpriteStatesEditor } from './SpriteStatesEditor'
+import { SpritePortraitEditor } from './SpritePortraitEditor'
+import { SpriteCellProperties } from './SpriteCellProperties'
 
-export function NpcEditor() {
-  const npcs = useStore((s) => s.npcs)
-  const selectedNpcId = useStore((s) => s.selectedNpcId)
+export function SpriteEditor() {
+  const sprites = useStore((s) => s.sprites)
+  const selectedSpriteId = useStore((s) => s.selectedSpriteId)
 
-  const npc = npcs.find((n) => n.id === selectedNpcId) ?? null
+  const npc = sprites.find((n) => n.id === selectedSpriteId) ?? null
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="flex flex-1 min-h-0">
-        <NpcList />
+        <SpriteList />
         <div className="flex-1 overflow-auto p-4">
           {npc ? (
             <>
@@ -32,13 +32,13 @@ export function NpcEditor() {
                 </div>
               </div>
 
-              <NpcSpriteEditor npc={npc} />
-              <NpcPortraitEditor npc={npc} />
+              <SpriteStatesEditor npc={npc} />
+              <SpritePortraitEditor npc={npc} />
             </>
           ) : (
             <div className="flex items-center justify-center h-full">
               <div className="text-sm font-mono" style={{ color: 'var(--text-dim)' }}>
-                {npcs.length === 0
+                {sprites.length === 0
                   ? 'Open an NPC file from the File menu'
                   : 'Select an NPC from the list'}
               </div>
@@ -47,7 +47,7 @@ export function NpcEditor() {
         </div>
       </div>
 
-      {npc && <NpcCellProperties npc={npc} />}
+      {npc && <SpriteCellProperties npc={npc} />}
     </div>
   )
 }

@@ -4,19 +4,19 @@ import { ColorPicker } from '../ColorPicker'
 import { CP437Dialog } from '../CP437Dialog'
 import { cp437ToUnicode } from '../../utils/cp437'
 import type { RGBA } from '../../types'
-import type { NpcVisualData } from '../../types/npc'
+import type { SpriteVisualData } from '../../types/sprite'
 import { rgbaToCSS } from '../../rendering/tinting'
 
-export function NpcCellProperties({ npc }: { npc: NpcVisualData }) {
-  const paintMode = useStore((s) => s.npcPaintMode)
-  const setPaintMode = useStore((s) => s.setNpcPaintMode)
-  const currentGlyph = useStore((s) => s.npcCurrentGlyph)
-  const setCurrentGlyph = useStore((s) => s.setNpcCurrentGlyph)
-  const currentFg = useStore((s) => s.npcCurrentFg)
-  const setCurrentFg = useStore((s) => s.setNpcCurrentFg)
-  const currentBg = useStore((s) => s.npcCurrentBg)
-  const setCurrentBg = useStore((s) => s.setNpcCurrentBg)
-  const selectedCell = useStore((s) => s.npcSelectedCell)
+export function SpriteCellProperties({ npc }: { npc: SpriteVisualData }) {
+  const paintMode = useStore((s) => s.spritePaintMode)
+  const setPaintMode = useStore((s) => s.setSpritePaintMode)
+  const currentGlyph = useStore((s) => s.spriteCurrentGlyph)
+  const setCurrentGlyph = useStore((s) => s.setSpriteCurrentGlyph)
+  const currentFg = useStore((s) => s.spriteCurrentFg)
+  const setCurrentFg = useStore((s) => s.setSpriteCurrentFg)
+  const currentBg = useStore((s) => s.spriteCurrentBg)
+  const setCurrentBg = useStore((s) => s.setSpriteCurrentBg)
+  const selectedCell = useStore((s) => s.spriteSelectedCell)
 
   const [showFgPicker, setShowFgPicker] = useState(false)
   const [showBgPicker, setShowBgPicker] = useState(false)

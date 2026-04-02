@@ -3,7 +3,9 @@ import { useStore } from '../store'
 import { serializeTerrain } from '../io/terrainFile'
 import { serializeEntities } from '../io/entitiesFile'
 import { serializeRegistry } from '../io/registryFile'
-import { serializeNpcFile } from '../io/npcFile'
+import { serializeSpriteFile } from '../io/spriteFile'
+import { serializeDialogFile } from '../io/dialogFile'
+import { serializeCutsceneFile } from '../io/cutsceneFile'
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
@@ -39,26 +41,78 @@ export function useKeyboardShortcuts() {
         e.preventDefault()
         const s = useStore.getState()
 
-        // NPC mode: save NPC file
-        if (s.editorMode === 'npc') {
-          if (s.npcs.length > 0) {
-            const text = serializeNpcFile(s.npcs)
-            if (s.npcFileHandle) {
-              s.npcFileHandle.createWritable().then(async (w) => {
+        // Sprites mode: save sprite file
+        if (s.editorMode === 'sprites') {
+          if (s.sprites.length > 0) {
+            const text = serializeSpriteFile(s.sprites)
+            if (s.spriteFileHandle) {
+              s.spriteFileHandle.createWritable().then(async (w) => {
                 await w.write(text)
                 await w.close()
-                useStore.setState({ npcsDirty: false })
+                useStore.setState({ spritesDirty: false })
               })
             } else {
               (window as any).showSaveFilePicker({
-                suggestedName: 'npcs.json',
-                types: [{ description: 'NPC JSON', accept: { 'application/json': ['.json'] } }],
+                suggestedName: 'sprites.json',
+                types: [{ description: 'Sprite JSON', accept: { 'application/json': ['.json'] } }],
               }).then(async (handle: FileSystemFileHandle) => {
                 const w = await handle.createWritable()
                 await w.write(text)
                 await w.close()
-                useStore.getState().setNpcFileHandle(handle)
-                useStore.setState({ npcsDirty: false })
+                useStore.getState().setSpriteFileHandle(handle)
+                useStore.setState({ spritesDirty: false })
+              }).catch(() => {})
+            }
+          }
+          return
+        }
+
+        // Dialogs mode: save dialog file
+        if (s.editorMode === 'dialogs') {
+          if (s.dialogTrees.length > 0) {
+            const text = serializeDialogFile(s.dialogTrees)
+            if (s.dialogFileHandle) {
+              s.dialogFileHandle.createWritable().then(async (w) => {
+                await w.write(text)
+                await w.close()
+                useStore.setState({ dialogsDirty: false })
+              })
+            } else {
+              (window as any).showSaveFilePicker({
+                suggestedName: 'dialogues.json',
+                types: [{ description: 'Dialog JSON', accept: { 'application/json': ['.json'] } }],
+              }).then(async (handle: FileSystemFileHandle) => {
+                const w = await handle.createWritable()
+                await w.write(text)
+                await w.close()
+                useStore.getState().setDialogFileHandle(handle)
+                useStore.setState({ dialogsDirty: false })
+              }).catch(() => {})
+            }
+          }
+          return
+        }
+
+        // Cutscenes mode: save cutscene file
+        if (s.editorMode === 'cutscenes') {
+          if (s.cutscenes.length > 0) {
+            const text = serializeCutsceneFile(s.cutscenes)
+            if (s.cutsceneFileHandle) {
+              s.cutsceneFileHandle.createWritable().then(async (w) => {
+                await w.write(text)
+                await w.close()
+                useStore.setState({ cutscenesDirty: false })
+              })
+            } else {
+              (window as any).showSaveFilePicker({
+                suggestedName: 'cutscenes.json',
+                types: [{ description: 'Cutscene JSON', accept: { 'application/json': ['.json'] } }],
+              }).then(async (handle: FileSystemFileHandle) => {
+                const w = await handle.createWritable()
+                await w.write(text)
+                await w.close()
+                useStore.getState().setCutsceneFileHandle(handle)
+                useStore.setState({ cutscenesDirty: false })
               }).catch(() => {})
             }
           }
@@ -135,20 +189,20 @@ export function useKeyboardShortcuts() {
       }
 
       // ── NPC mode shortcuts ──
-      if (useStore.getState().editorMode === 'npc') {
+      if (useStore.getState().editorMode === 'sprites') {
         const ns = useStore.getState()
 
         // Escape — deselect NPC cell
         if (e.key === 'Escape') {
-          ns.setNpcSelectedCell(null)
+          ns.setSpriteSelectedCell(null)
           return
         }
 
         // Arrow keys — move selected cell
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && ns.npcSelectedCell) {
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key) && ns.spriteSelectedCell) {
           e.preventDefault()
-          const { target, row, col } = ns.npcSelectedCell
-          const npc = ns.npcs.find((n) => n.id === ns.selectedNpcId)
+          const { target, row, col } = ns.spriteSelectedCell
+          const npc = ns.sprites.find((n) => n.id === ns.selectedSpriteId)
           const grid = target === 'portrait'
             ? npc?.portrait
             : npc?.sprite[target]
@@ -158,24 +212,24 @@ export function useKeyboardShortcuts() {
           if (e.key === 'ArrowDown') nr = Math.min(grid.height - 1, row + 1)
           if (e.key === 'ArrowLeft') nc = Math.max(0, col - 1)
           if (e.key === 'ArrowRight') nc = Math.min(grid.width - 1, col + 1)
-          ns.setNpcSelectedCell({ target, row: nr, col: nc })
+          ns.setSpriteSelectedCell({ target, row: nr, col: nc })
           return
         }
 
         // G/F/B — switch paint mode
-        if (e.key.toLowerCase() === 'g' && !ctrl) { ns.setNpcPaintMode('glyph'); return }
-        if (e.key.toLowerCase() === 'f' && !ctrl) { ns.setNpcPaintMode('fg'); return }
-        if (e.key.toLowerCase() === 'b' && !ctrl) { ns.setNpcPaintMode('bg'); return }
+        if (e.key.toLowerCase() === 'g' && !ctrl) { ns.setSpritePaintMode('glyph'); return }
+        if (e.key.toLowerCase() === 'f' && !ctrl) { ns.setSpritePaintMode('fg'); return }
+        if (e.key.toLowerCase() === 'b' && !ctrl) { ns.setSpritePaintMode('bg'); return }
 
         // Typing a character in glyph mode — set current glyph
-        if (ns.npcPaintMode === 'glyph' && e.key.length === 1 && !ctrl) {
-          ns.setNpcCurrentGlyph(e.key)
+        if (ns.spritePaintMode === 'glyph' && e.key.length === 1 && !ctrl) {
+          ns.setSpriteCurrentGlyph(e.key)
           // Also paint the selected cell if one is selected
-          if (ns.npcSelectedCell && ns.selectedNpcId) {
-            const { target, row, col } = ns.npcSelectedCell
+          if (ns.spriteSelectedCell && ns.selectedSpriteId) {
+            const { target, row, col } = ns.spriteSelectedCell
             const storeTarget = target === 'portrait' ? 'portrait' as const : 'sprite' as const
             const state = target === 'portrait' ? null : target
-            ns.setNpcCell(storeTarget, state, row, col, { glyph: e.key })
+            ns.setSpriteCell(storeTarget, state, row, col, { glyph: e.key })
           }
           return
         }

@@ -1,5 +1,5 @@
 import type { RGBA } from '../types'
-import type { NpcVisualData, NpcCell, NpcSpriteState } from '../types/npc'
+import type { SpriteVisualData, SpriteCell, SpriteState } from '../types/sprite'
 import { dotnetColorToRGBA } from '../utils/dotnetColors'
 import { rgbaToCSS } from '../rendering/tinting'
 
@@ -52,13 +52,13 @@ function expandGrid(
   fgMapRows: string[] | undefined,
   defaultFg: RGBA,
   defaultBg: RGBA,
-): NpcSpriteState {
+): SpriteState {
   const height = artRows.length
   const width = Math.max(...artRows.map((r) => r.length), 0)
 
-  const rows: NpcCell[][] = []
+  const rows: SpriteCell[][] = []
   for (let r = 0; r < height; r++) {
-    const row: NpcCell[] = []
+    const row: SpriteCell[] = []
     const artLine = artRows[r] || ''
     const bgLine = bgMapRows?.[r] || ''
     const fgLine = fgMapRows?.[r] || ''
@@ -86,9 +86,9 @@ function expandGrid(
   return { rows, width, height }
 }
 
-export function parseNpcFile(jsonText: string): NpcVisualData[] {
+export function parseSpriteFile(jsonText: string): SpriteVisualData[] {
   const arr = JSON.parse(jsonText) as Record<string, unknown>[]
-  const result: NpcVisualData[] = []
+  const result: SpriteVisualData[] = []
 
   for (const obj of arr) {
     const id = (obj.id as string) || ''
@@ -108,7 +108,7 @@ export function parseNpcFile(jsonText: string): NpcVisualData[] {
     const fgMap = obj.fg_map as Record<string, string[]> | undefined
 
     // Expand all sprite states from ascii_art keys
-    const sprite: Record<string, NpcSpriteState> = {}
+    const sprite: Record<string, SpriteState> = {}
     if (asciiArt) {
       for (const [stateName, artRows] of Object.entries(asciiArt)) {
         sprite[stateName] = expandGrid(
@@ -118,7 +118,7 @@ export function parseNpcFile(jsonText: string): NpcVisualData[] {
     }
 
     // Portrait
-    let portrait: NpcSpriteState | null = null
+    let portrait: SpriteState | null = null
     const portraitArt = obj.dialogue_portrait as string[] | undefined
     if (portraitArt && portraitArt.length > 0) {
       const pBgPalette = buildPalette(obj.portrait_bg_palette as Record<string, string> | undefined)
@@ -150,7 +150,7 @@ function rgbaToHex(c: RGBA): string {
 const PALETTE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 
 function generatePaletteAndMap(
-  grid: NpcSpriteState,
+  grid: SpriteState,
 ): { palette: Record<string, string>; map: string[] } {
   // Collect unique non-transparent colors
   const colorKey = (c: RGBA) => rgbaToCSS(c)
@@ -191,7 +191,7 @@ function generatePaletteAndMap(
 }
 
 function generateFgPaletteAndMap(
-  grid: NpcSpriteState,
+  grid: SpriteState,
 ): { allSame: boolean; singleColor: string; palette: Record<string, string>; map: string[] } {
   const colorKey = (c: RGBA) => rgbaToCSS(c)
   const uniqueColors = new Map<string, RGBA>()
@@ -228,11 +228,11 @@ function generateFgPaletteAndMap(
   return { allSame: false, singleColor: '', palette, map }
 }
 
-function gridToArtRows(grid: NpcSpriteState): string[] {
+function gridToArtRows(grid: SpriteState): string[] {
   return grid.rows.map((row) => row.map((c) => c.glyph).join(''))
 }
 
-export function serializeNpcFile(npcs: NpcVisualData[]): string {
+export function serializeSpriteFile(npcs: SpriteVisualData[]): string {
   const output: Record<string, unknown>[] = []
 
   for (const npc of npcs) {
@@ -272,7 +272,7 @@ export function serializeNpcFile(npcs: NpcVisualData[]): string {
       }
     }
 
-    const rebuildBgMap = (grid: NpcSpriteState): string[] => {
+    const rebuildBgMap = (grid: SpriteState): string[] => {
       return grid.rows.map((row) =>
         row.map((cell) => {
           if (cell.bg.a === 0) return ' '
@@ -318,7 +318,7 @@ export function serializeNpcFile(npcs: NpcVisualData[]): string {
         }
       }
 
-      const rebuildFgMap = (grid: NpcSpriteState): string[] => {
+      const rebuildFgMap = (grid: SpriteState): string[] => {
         return grid.rows.map((row) =>
           row.map((cell) => fgColorToChar.get(rgbaToHex(cell.fg)) ?? ' ').join(''),
         )

@@ -8,7 +8,9 @@ import type {
   EntityChange,
   RGBA,
 } from '../types'
-import type { NpcVisualData, NpcCell, NpcSpriteState } from '../types/npc'
+import type { SpriteVisualData, SpriteCell, SpriteState } from '../types/sprite'
+import type { DialogTree, DialogNode } from '../types/dialog'
+import type { Cutscene, CutsceneTrigger, CutsceneStep } from '../types/cutscene'
 
 export interface TileForgeState {
   // ── Registry Slice ──
@@ -91,31 +93,68 @@ export interface TileForgeState {
   setPlayerOverlayPos: (pos: { x: number; y: number } | null) => void
 
   // ── Editor Mode ──
-  editorMode: 'map' | 'npc'
-  setEditorMode: (mode: 'map' | 'npc') => void
+  editorMode: 'map' | 'sprites' | 'dialogs' | 'cutscenes'
+  setEditorMode: (mode: 'map' | 'sprites' | 'dialogs' | 'cutscenes') => void
 
   // ── NPC Slice ──
-  npcs: NpcVisualData[]
-  selectedNpcId: string | null
-  npcsDirty: boolean
-  npcFileHandle: FileSystemFileHandle | null
-  npcSelectedCell: { target: string; row: number; col: number } | null
-  npcActiveState: string
-  npcPaintMode: 'glyph' | 'fg' | 'bg'
-  npcCurrentGlyph: string
-  npcCurrentFg: RGBA
-  npcCurrentBg: RGBA
-  setNpcFileHandle: (h: FileSystemFileHandle | null) => void
-  loadNpcs: (npcs: NpcVisualData[]) => void
-  selectNpc: (id: string | null) => void
-  setNpcCell: (target: 'sprite' | 'portrait', state: string | null, row: number, col: number, cell: Partial<NpcCell>) => void
-  setNpcPaintMode: (mode: 'glyph' | 'fg' | 'bg') => void
-  setNpcCurrentGlyph: (ch: string) => void
-  setNpcCurrentFg: (c: RGBA) => void
-  setNpcCurrentBg: (c: RGBA) => void
-  setNpcSelectedCell: (pos: { target: string; row: number; col: number } | null) => void
-  setNpcActiveState: (s: string) => void
-  copyNpcState: (from: string, to: string) => void
+  sprites: SpriteVisualData[]
+  selectedSpriteId: string | null
+  spritesDirty: boolean
+  spriteFileHandle: FileSystemFileHandle | null
+  spriteSelectedCell: { target: string; row: number; col: number } | null
+  spriteActiveState: string
+  spritePaintMode: 'glyph' | 'fg' | 'bg'
+  spriteCurrentGlyph: string
+  spriteCurrentFg: RGBA
+  spriteCurrentBg: RGBA
+  setSpriteFileHandle: (h: FileSystemFileHandle | null) => void
+  loadSprites: (sprites: SpriteVisualData[]) => void
+  selectSprite: (id: string | null) => void
+  setSpriteCell: (target: 'sprite' | 'portrait', state: string | null, row: number, col: number, cell: Partial<SpriteCell>) => void
+  setSpritePaintMode: (mode: 'glyph' | 'fg' | 'bg') => void
+  setSpriteCurrentGlyph: (ch: string) => void
+  setSpriteCurrentFg: (c: RGBA) => void
+  setSpriteCurrentBg: (c: RGBA) => void
+  setSpriteSelectedCell: (pos: { target: string; row: number; col: number } | null) => void
+  setSpriteActiveState: (s: string) => void
+  copySpriteState: (from: string, to: string) => void
+
+  // ── Dialog Slice ──
+  dialogTrees: DialogTree[]
+  selectedTreeId: string | null
+  selectedNodeId: string | null
+  dialogsDirty: boolean
+  dialogFileHandle: FileSystemFileHandle | null
+  setDialogFileHandle: (h: FileSystemFileHandle | null) => void
+  loadDialogs: (trees: DialogTree[]) => void
+  selectDialogTree: (treeId: string | null) => void
+  selectDialogNode: (nodeId: string | null) => void
+  updateDialogNode: (treeId: string, nodeId: string, node: DialogNode) => void
+  addDialogNode: (treeId: string, nodeId: string, node: DialogNode) => void
+  deleteDialogNode: (treeId: string, nodeId: string) => void
+  addDialogTree: (tree: DialogTree) => void
+  deleteDialogTree: (treeId: string) => void
+  updateDialogTreeId: (oldId: string, newId: string) => void
+  updateDialogTreeRoot: (treeId: string, root: string) => void
+
+  // ── Cutscene Slice ──
+  cutscenes: Cutscene[]
+  selectedCutsceneId: string | null
+  selectedStepIndex: number | null
+  cutscenesDirty: boolean
+  cutsceneFileHandle: FileSystemFileHandle | null
+  setCutsceneFileHandle: (h: FileSystemFileHandle | null) => void
+  loadCutscenes: (cutscenes: Cutscene[]) => void
+  selectCutscene: (id: string | null) => void
+  selectStep: (index: number | null) => void
+  updateStep: (cutsceneId: string, index: number, step: CutsceneStep) => void
+  addStep: (cutsceneId: string, index: number, step: CutsceneStep) => void
+  deleteStep: (cutsceneId: string, index: number) => void
+  moveStep: (cutsceneId: string, from: number, to: number) => void
+  addCutscene: (cutscene: Cutscene) => void
+  deleteCutscene: (id: string) => void
+  updateCutsceneTrigger: (id: string, trigger: CutsceneTrigger) => void
+  updateCutsceneId: (oldId: string, newId: string) => void
 }
 
 export const useStore = create<TileForgeState>((set, get) => ({
@@ -468,34 +507,34 @@ export const useStore = create<TileForgeState>((set, get) => ({
   setEditorMode: (mode) => set({ editorMode: mode }),
 
   // ── NPC ──
-  npcs: [],
-  selectedNpcId: null,
-  npcsDirty: false,
-  npcFileHandle: null,
-  npcSelectedCell: null,
-  npcActiveState: 'idle',
-  npcPaintMode: 'glyph',
-  npcCurrentGlyph: ' ',
-  npcCurrentFg: { r: 255, g: 255, b: 255, a: 255 },
-  npcCurrentBg: { r: 0, g: 0, b: 0, a: 0 },
-  setNpcFileHandle: (h) => set({ npcFileHandle: h }),
+  sprites: [],
+  selectedSpriteId: null,
+  spritesDirty: false,
+  spriteFileHandle: null,
+  spriteSelectedCell: null,
+  spriteActiveState: 'idle',
+  spritePaintMode: 'glyph',
+  spriteCurrentGlyph: ' ',
+  spriteCurrentFg: { r: 255, g: 255, b: 255, a: 255 },
+  spriteCurrentBg: { r: 0, g: 0, b: 0, a: 0 },
+  setSpriteFileHandle: (h) => set({ spriteFileHandle: h }),
 
-  loadNpcs: (npcs) =>
+  loadSprites: (items) =>
     set(() => ({
-      npcs,
-      selectedNpcId: npcs.length > 0 ? npcs[0].id : null,
-      npcsDirty: false,
-      npcSelectedCell: null,
+      sprites: items,
+      selectedSpriteId: items.length > 0 ? items[0].id : null,
+      spritesDirty: false,
+      spriteSelectedCell: null,
     })),
 
-  selectNpc: (id) => set({ selectedNpcId: id, npcSelectedCell: null }),
+  selectSprite: (id) => set({ selectedSpriteId: id, spriteSelectedCell: null }),
 
-  setNpcCell: (target, state, row, col, cellUpdate) =>
+  setSpriteCell: (target, state, row, col, cellUpdate) =>
     set((s) => {
-      const npc = s.npcs.find((n) => n.id === s.selectedNpcId)
-      if (!npc) return s
+      const item = s.sprites.find((n) => n.id === s.selectedSpriteId)
+      if (!item) return s
 
-      const updateGrid = (grid: NpcSpriteState) => {
+      const updateGrid = (grid: SpriteState) => {
         const newRows = grid.rows.map((r) => [...r])
         if (row < newRows.length && col < (newRows[row]?.length ?? 0)) {
           newRows[row][col] = { ...newRows[row][col], ...cellUpdate }
@@ -503,44 +542,247 @@ export const useStore = create<TileForgeState>((set, get) => ({
         return { ...grid, rows: newRows }
       }
 
-      let updatedNpc: NpcVisualData
+      let updated: SpriteVisualData
       if (target === 'sprite' && state) {
-        const updatedSprite = { ...npc.sprite }
-        updatedSprite[state] = updateGrid(npc.sprite[state])
-        updatedNpc = { ...npc, sprite: updatedSprite }
-      } else if (target === 'portrait' && npc.portrait) {
-        updatedNpc = { ...npc, portrait: updateGrid(npc.portrait) }
+        const updatedSprite = { ...item.sprite }
+        updatedSprite[state] = updateGrid(item.sprite[state])
+        updated = { ...item, sprite: updatedSprite }
+      } else if (target === 'portrait' && item.portrait) {
+        updated = { ...item, portrait: updateGrid(item.portrait) }
       } else {
         return s
       }
 
       return {
-        npcs: s.npcs.map((n) => (n.id === s.selectedNpcId ? updatedNpc : n)),
-        npcsDirty: true,
+        sprites: s.sprites.map((n) => (n.id === s.selectedSpriteId ? updated : n)),
+        spritesDirty: true,
       }
     }),
 
-  setNpcPaintMode: (mode) => set({ npcPaintMode: mode }),
-  setNpcCurrentGlyph: (ch) => set({ npcCurrentGlyph: ch }),
-  setNpcCurrentFg: (c) => set({ npcCurrentFg: c }),
-  setNpcCurrentBg: (c) => set({ npcCurrentBg: c }),
-  setNpcSelectedCell: (pos) => set({ npcSelectedCell: pos }),
-  setNpcActiveState: (s) => set({ npcActiveState: s }),
+  setSpritePaintMode: (mode) => set({ spritePaintMode: mode }),
+  setSpriteCurrentGlyph: (ch) => set({ spriteCurrentGlyph: ch }),
+  setSpriteCurrentFg: (c) => set({ spriteCurrentFg: c }),
+  setSpriteCurrentBg: (c) => set({ spriteCurrentBg: c }),
+  setSpriteSelectedCell: (pos) => set({ spriteSelectedCell: pos }),
+  setSpriteActiveState: (s) => set({ spriteActiveState: s }),
 
-  copyNpcState: (from, to) =>
+  copySpriteState: (from, to) =>
     set((s) => {
-      const npc = s.npcs.find((n) => n.id === s.selectedNpcId)
-      if (!npc) return s
-      const source = npc.sprite[from]
+      const item = s.sprites.find((n) => n.id === s.selectedSpriteId)
+      if (!item) return s
+      const source = item.sprite[from]
       const copy = {
         ...source,
         rows: source.rows.map((row) => row.map((cell) => ({ ...cell }))),
       }
-      const updatedSprite = { ...npc.sprite, [to]: copy }
-      const updatedNpc = { ...npc, sprite: updatedSprite }
+      const updatedSprite = { ...item.sprite, [to]: copy }
+      const updated = { ...item, sprite: updatedSprite }
       return {
-        npcs: s.npcs.map((n) => (n.id === s.selectedNpcId ? updatedNpc : n)),
-        npcsDirty: true,
+        sprites: s.sprites.map((n) => (n.id === s.selectedSpriteId ? updated : n)),
+        spritesDirty: true,
+      }
+    }),
+
+  // ── Dialogs ──
+  dialogTrees: [],
+  selectedTreeId: null,
+  selectedNodeId: null,
+  dialogsDirty: false,
+  dialogFileHandle: null,
+  setDialogFileHandle: (h) => set({ dialogFileHandle: h }),
+
+  loadDialogs: (trees) =>
+    set(() => ({
+      dialogTrees: trees,
+      selectedTreeId: trees.length > 0 ? trees[0].tree_id : null,
+      selectedNodeId: null,
+      dialogsDirty: false,
+    })),
+
+  selectDialogTree: (treeId) => set({ selectedTreeId: treeId, selectedNodeId: null }),
+  selectDialogNode: (nodeId) => set({ selectedNodeId: nodeId }),
+
+  updateDialogNode: (treeId, nodeId, node) =>
+    set((s) => {
+      const dialogTrees = s.dialogTrees.map((t) => {
+        if (t.tree_id !== treeId) return t
+        const nodes = { ...t.nodes, [nodeId]: node }
+        return { ...t, nodes }
+      })
+      return { dialogTrees, dialogsDirty: true }
+    }),
+
+  addDialogNode: (treeId, nodeId, node) =>
+    set((s) => {
+      const dialogTrees = s.dialogTrees.map((t) => {
+        if (t.tree_id !== treeId) return t
+        const nodes = { ...t.nodes, [nodeId]: node }
+        return { ...t, nodes }
+      })
+      return { dialogTrees, dialogsDirty: true, selectedNodeId: nodeId }
+    }),
+
+  deleteDialogNode: (treeId, nodeId) =>
+    set((s) => {
+      const dialogTrees = s.dialogTrees.map((t) => {
+        if (t.tree_id !== treeId) return t
+        const nodes = { ...t.nodes }
+        delete nodes[nodeId]
+        return { ...t, nodes }
+      })
+      return {
+        dialogTrees,
+        dialogsDirty: true,
+        selectedNodeId: s.selectedNodeId === nodeId ? null : s.selectedNodeId,
+      }
+    }),
+
+  addDialogTree: (tree) =>
+    set((s) => ({
+      dialogTrees: [...s.dialogTrees, tree],
+      selectedTreeId: tree.tree_id,
+      selectedNodeId: null,
+      dialogsDirty: true,
+    })),
+
+  deleteDialogTree: (treeId) =>
+    set((s) => {
+      const dialogTrees = s.dialogTrees.filter((t) => t.tree_id !== treeId)
+      return {
+        dialogTrees,
+        dialogsDirty: true,
+        selectedTreeId: s.selectedTreeId === treeId
+          ? (dialogTrees.length > 0 ? dialogTrees[0].tree_id : null)
+          : s.selectedTreeId,
+        selectedNodeId: s.selectedTreeId === treeId ? null : s.selectedNodeId,
+      }
+    }),
+
+  updateDialogTreeId: (oldId, newId) =>
+    set((s) => {
+      const dialogTrees = s.dialogTrees.map((t) =>
+        t.tree_id === oldId ? { ...t, tree_id: newId } : t
+      )
+      return {
+        dialogTrees,
+        dialogsDirty: true,
+        selectedTreeId: s.selectedTreeId === oldId ? newId : s.selectedTreeId,
+      }
+    }),
+
+  updateDialogTreeRoot: (treeId, root) =>
+    set((s) => {
+      const dialogTrees = s.dialogTrees.map((t) =>
+        t.tree_id === treeId ? { ...t, root } : t
+      )
+      return { dialogTrees, dialogsDirty: true }
+    }),
+
+  // ── Cutscenes ──
+  cutscenes: [],
+  selectedCutsceneId: null,
+  selectedStepIndex: null,
+  cutscenesDirty: false,
+  cutsceneFileHandle: null,
+  setCutsceneFileHandle: (h) => set({ cutsceneFileHandle: h }),
+
+  loadCutscenes: (items) =>
+    set(() => ({
+      cutscenes: items,
+      selectedCutsceneId: items.length > 0 ? items[0].id : null,
+      selectedStepIndex: null,
+      cutscenesDirty: false,
+    })),
+
+  selectCutscene: (id) => set({ selectedCutsceneId: id, selectedStepIndex: null }),
+  selectStep: (index) => set({ selectedStepIndex: index }),
+
+  updateStep: (cutsceneId, index, step) =>
+    set((s) => {
+      const cutscenes = s.cutscenes.map((cs) => {
+        if (cs.id !== cutsceneId) return cs
+        const steps = [...cs.steps]
+        steps[index] = step
+        return { ...cs, steps }
+      })
+      return { cutscenes, cutscenesDirty: true }
+    }),
+
+  addStep: (cutsceneId, index, step) =>
+    set((s) => {
+      const cutscenes = s.cutscenes.map((cs) => {
+        if (cs.id !== cutsceneId) return cs
+        const steps = [...cs.steps]
+        steps.splice(index, 0, step)
+        return { ...cs, steps }
+      })
+      return { cutscenes, cutscenesDirty: true, selectedStepIndex: index }
+    }),
+
+  deleteStep: (cutsceneId, index) =>
+    set((s) => {
+      const cutscenes = s.cutscenes.map((cs) => {
+        if (cs.id !== cutsceneId) return cs
+        const steps = cs.steps.filter((_, i) => i !== index)
+        return { ...cs, steps }
+      })
+      return {
+        cutscenes,
+        cutscenesDirty: true,
+        selectedStepIndex: s.selectedStepIndex === index ? null : s.selectedStepIndex,
+      }
+    }),
+
+  moveStep: (cutsceneId, from, to) =>
+    set((s) => {
+      const cutscenes = s.cutscenes.map((cs) => {
+        if (cs.id !== cutsceneId) return cs
+        const steps = [...cs.steps]
+        const [moved] = steps.splice(from, 1)
+        steps.splice(to, 0, moved)
+        return { ...cs, steps }
+      })
+      return { cutscenes, cutscenesDirty: true, selectedStepIndex: to }
+    }),
+
+  addCutscene: (cutscene) =>
+    set((s) => ({
+      cutscenes: [...s.cutscenes, cutscene],
+      selectedCutsceneId: cutscene.id,
+      selectedStepIndex: null,
+      cutscenesDirty: true,
+    })),
+
+  deleteCutscene: (id) =>
+    set((s) => {
+      const cutscenes = s.cutscenes.filter((cs) => cs.id !== id)
+      return {
+        cutscenes,
+        cutscenesDirty: true,
+        selectedCutsceneId: s.selectedCutsceneId === id
+          ? (cutscenes.length > 0 ? cutscenes[0].id : null)
+          : s.selectedCutsceneId,
+        selectedStepIndex: s.selectedCutsceneId === id ? null : s.selectedStepIndex,
+      }
+    }),
+
+  updateCutsceneTrigger: (id, trigger) =>
+    set((s) => {
+      const cutscenes = s.cutscenes.map((cs) =>
+        cs.id === id ? { ...cs, trigger } : cs
+      )
+      return { cutscenes, cutscenesDirty: true }
+    }),
+
+  updateCutsceneId: (oldId, newId) =>
+    set((s) => {
+      const cutscenes = s.cutscenes.map((cs) =>
+        cs.id === oldId ? { ...cs, id: newId } : cs
+      )
+      return {
+        cutscenes,
+        cutscenesDirty: true,
+        selectedCutsceneId: s.selectedCutsceneId === oldId ? newId : s.selectedCutsceneId,
       }
     }),
 }))

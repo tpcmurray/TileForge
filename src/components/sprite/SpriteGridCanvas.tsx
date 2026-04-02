@@ -1,9 +1,9 @@
 import { useRef, useEffect, useCallback } from 'react'
-import type { NpcCell } from '../../types/npc'
+import type { SpriteCell } from '../../types/sprite'
 import { rgbaToCSS, drawCheckerboard } from '../../rendering/tinting'
 
 interface Props {
-  grid: NpcCell[][]
+  grid: SpriteCell[][]
   width: number
   height: number
   cellW?: number
@@ -11,11 +11,11 @@ interface Props {
   selectedCell: { row: number; col: number } | null
   onCellClick: (row: number, col: number) => void
   onCellPaint: (row: number, col: number) => void
-  onCellRightClick: (row: number, col: number, cell: NpcCell) => void
+  onCellRightClick: (row: number, col: number, cell: SpriteCell) => void
   label?: string
 }
 
-export function NpcGridEditor({
+export function SpriteGridCanvas({
   grid,
   width,
   height,

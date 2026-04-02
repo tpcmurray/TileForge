@@ -1,20 +1,20 @@
 import { useCallback } from 'react'
 import { useStore } from '../../store'
-import { NpcGridEditor } from './NpcGridEditor'
-import type { NpcVisualData, NpcCell } from '../../types/npc'
+import { SpriteGridCanvas } from './SpriteGridCanvas'
+import type { SpriteVisualData, SpriteCell } from '../../types/sprite'
 
-export function NpcSpriteEditor({ npc }: { npc: NpcVisualData }) {
-  const selectedCell = useStore((s) => s.npcSelectedCell)
-  const setSelectedCell = useStore((s) => s.setNpcSelectedCell)
-  const paintMode = useStore((s) => s.npcPaintMode)
-  const currentGlyph = useStore((s) => s.npcCurrentGlyph)
-  const currentFg = useStore((s) => s.npcCurrentFg)
-  const currentBg = useStore((s) => s.npcCurrentBg)
-  const setNpcCell = useStore((s) => s.setNpcCell)
-  const setCurrentGlyph = useStore((s) => s.setNpcCurrentGlyph)
-  const setCurrentFg = useStore((s) => s.setNpcCurrentFg)
-  const setCurrentBg = useStore((s) => s.setNpcCurrentBg)
-  const copyNpcState = useStore((s) => s.copyNpcState)
+export function SpriteStatesEditor({ npc }: { npc: SpriteVisualData }) {
+  const selectedCell = useStore((s) => s.spriteSelectedCell)
+  const setSelectedCell = useStore((s) => s.setSpriteSelectedCell)
+  const paintMode = useStore((s) => s.spritePaintMode)
+  const currentGlyph = useStore((s) => s.spriteCurrentGlyph)
+  const currentFg = useStore((s) => s.spriteCurrentFg)
+  const currentBg = useStore((s) => s.spriteCurrentBg)
+  const setSpriteCell = useStore((s) => s.setSpriteCell)
+  const setCurrentGlyph = useStore((s) => s.setSpriteCurrentGlyph)
+  const setCurrentFg = useStore((s) => s.setSpriteCurrentFg)
+  const setCurrentBg = useStore((s) => s.setSpriteCurrentBg)
+  const copySpriteState = useStore((s) => s.copySpriteState)
 
   const stateNames = Object.keys(npc.sprite)
 
@@ -30,18 +30,18 @@ export function NpcSpriteEditor({ npc }: { npc: NpcVisualData }) {
     (state: string) => ({
       onCellClick: (row: number, col: number) => {
         setSelectedCell({ target: state, row, col })
-        setNpcCell('sprite', state, row, col, paintUpdate())
+        setSpriteCell('sprite', state, row, col, paintUpdate())
       },
       onCellPaint: (row: number, col: number) => {
-        setNpcCell('sprite', state, row, col, paintUpdate())
+        setSpriteCell('sprite', state, row, col, paintUpdate())
       },
-      onCellRightClick: (_row: number, _col: number, cell: NpcCell) => {
+      onCellRightClick: (_row: number, _col: number, cell: SpriteCell) => {
         if (paintMode === 'glyph') setCurrentGlyph(cell.glyph)
         else if (paintMode === 'fg') setCurrentFg(cell.fg)
         else setCurrentBg(cell.bg)
       },
     }),
-    [setSelectedCell, setNpcCell, paintUpdate, paintMode, setCurrentGlyph, setCurrentFg, setCurrentBg],
+    [setSelectedCell, setSpriteCell, paintUpdate, paintMode, setCurrentGlyph, setCurrentFg, setCurrentBg],
   )
 
   return (
@@ -60,7 +60,7 @@ export function NpcSpriteEditor({ npc }: { npc: NpcVisualData }) {
             }}
             onChange={(e) => {
               const [from, to] = e.target.value.split('→')
-              if (from && to) copyNpcState(from, to)
+              if (from && to) copySpriteState(from, to)
               e.target.value = ''
             }}
             value=""
@@ -83,7 +83,7 @@ export function NpcSpriteEditor({ npc }: { npc: NpcVisualData }) {
           const grid = npc.sprite[state]
           const handlers = makeHandlers(state)
           return (
-            <NpcGridEditor
+            <SpriteGridCanvas
               key={state}
               grid={grid.rows}
               width={grid.width}
