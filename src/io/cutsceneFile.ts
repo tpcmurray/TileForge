@@ -35,5 +35,17 @@ export function serializeCutsceneFile(cutscenes: Cutscene[]): string {
     obj.steps = structuredClone(cs.steps) as unknown as Record<string, unknown>[]
     return obj
   })
-  return JSON.stringify({ cutscenes: output }, null, 2)
+  // Serialize with pretty-print, then collapse each step onto a single line
+  const json = JSON.stringify({ cutscenes: output }, null, 2)
+  return json.replace(
+    /\{\s*\n\s*"action":\s*[\s\S]*?\n\s*\}/g,
+    (match) => {
+      // Only collapse objects whose first key is "action" (i.e. steps)
+      const oneLine = match
+        .replace(/\s*\n\s*/g, ' ')
+        .replace(/\{ /g, '{ ')
+        .replace(/ \}/g, ' }')
+      return oneLine
+    },
+  )
 }

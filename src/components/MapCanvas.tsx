@@ -93,14 +93,14 @@ export function MapCanvas() {
       canvasWidth: rect.width,
       canvasHeight: rect.height,
       selection,
-      clipboard: pasteMode ? clipboard : null,
-      pastePreview: pasteMode ? pastePreview : null,
+      clipboard: (pasteMode || activeTool === 'paste') ? clipboard : null,
+      pastePreview: (pasteMode || activeTool === 'paste') ? pastePreview : null,
       playerOverlayPos: playerOverlay ? playerOverlayPos : null,
-      entities: showEntities ? entities : undefined,
-      showEntities,
+      entities: activeTool === 'entity' ? entities : undefined,
+      showEntities: activeTool === 'entity',
       selectedEntityId,
     })
-  }, [cells, tiles, mapWidth, mapHeight, zoom, panX, panY, showGrid, selection, clipboard, pasteMode, pastePreview, playerOverlay, playerOverlayPos, entities, showEntities, selectedEntityId])
+  }, [cells, tiles, mapWidth, mapHeight, zoom, panX, panY, showGrid, selection, clipboard, pasteMode, pastePreview, playerOverlay, playerOverlayPos, entities, showEntities, selectedEntityId, activeTool])
 
   useEffect(() => {
     const id = requestAnimationFrame(draw)
@@ -218,11 +218,18 @@ export function MapCanvas() {
         return
       }
 
-      // Paste mode: click to stamp
-      if (pasteMode && clipboard) {
+      // Paste tool / paste mode: click to stamp
+      if ((activeTool === 'paste' || pasteMode) && clipboard) {
         useStore.getState().paste(cell.x, cell.y)
-        setPasteMode(false)
-        setPastePreview(null)
+        // Stay in paste mode — user can keep clicking to paste more
+        return
+      }
+
+      // Copy tool: start selection drag
+      if (activeTool === 'copy') {
+        isSelecting.current = true
+        selStart.current = { x: cell.x, y: cell.y }
+        setSelection({ x: cell.x, y: cell.y, w: 1, h: 1 })
         return
       }
 
@@ -267,7 +274,7 @@ export function MapCanvas() {
       }
 
       // Update paste preview position
-      if (pasteMode && cell) {
+      if ((activeTool === 'paste' || pasteMode) && cell) {
         setPastePreview(cell)
       }
 
@@ -298,6 +305,10 @@ export function MapCanvas() {
     }
     if (isSelecting.current) {
       isSelecting.current = false
+      // Copy tool: auto-copy selection on release
+      if (activeTool === 'copy') {
+        useStore.getState().copySelection()
+      }
       return
     }
     if (isPainting.current) {
@@ -335,13 +346,15 @@ export function MapCanvas() {
 
   const hasMap = mapWidth > 0 && mapHeight > 0
 
-  const cursor = pasteMode
+  const cursor = (pasteMode || activeTool === 'paste')
     ? 'copy'
-    : activeTool === 'pick'
+    : activeTool === 'copy'
       ? 'crosshair'
-      : activeTool === 'entity'
-        ? 'pointer'
-        : 'default'
+      : activeTool === 'pick'
+        ? 'crosshair'
+        : activeTool === 'entity'
+          ? 'pointer'
+          : 'default'
 
   return (
     <div
@@ -390,7 +403,7 @@ export function MapCanvas() {
       )}
 
       {/* Paste mode hint */}
-      {pasteMode && (
+      {(pasteMode || (activeTool === 'paste' && clipboard)) && (
         <div
           className="absolute top-3 left-1/2 -translate-x-1/2 font-mono text-[11px] px-3.5 py-1.5 rounded-full"
           style={{
@@ -399,7 +412,20 @@ export function MapCanvas() {
             border: '1px solid var(--border)',
           }}
         >
-          Click to paste · Esc to cancel
+          Click to paste{pasteMode ? ' · Esc to cancel' : ''}
+        </div>
+      )}
+      {/* Copy mode hint */}
+      {activeTool === 'copy' && (
+        <div
+          className="absolute top-3 left-1/2 -translate-x-1/2 font-mono text-[11px] px-3.5 py-1.5 rounded-full"
+          style={{
+            color: 'var(--text-dim)',
+            background: 'var(--bg-panel)',
+            border: '1px solid var(--border)',
+          }}
+        >
+          Drag to select region{clipboard ? ' · Selection copied' : ''}
         </div>
       )}
 

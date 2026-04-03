@@ -65,7 +65,7 @@ export interface EntityChange {
 }
 
 /** Active tool types */
-export type ToolType = 'paint' | 'erase' | 'pick' | 'entity'
+export type ToolType = 'paint' | 'erase' | 'pick' | 'entity' | 'copy' | 'paste'
 
 // ── Entity types ──
 

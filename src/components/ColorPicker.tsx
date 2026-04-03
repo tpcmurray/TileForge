@@ -252,41 +252,81 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
           ))}
         </div>
 
-        {/* Hex RGB input */}
+        {/* Hex RGB input with copy/paste */}
         <div className="mb-3">
           <label className="text-[10px] font-mono uppercase mb-1 block" style={{ color: 'var(--text-dim)' }}>
             Hex
           </label>
-          <input
-            type="text"
-            value={`#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`}
-            onChange={(e) => {
-              const parsed = parseHexColor(e.target.value)
-              if (!parsed) return
-              const [nr, ng, nb] = parsed
-              setR(nr); setG(ng); setB(nb)
-              setHue(rgbToHue(nr, ng, nb))
-              emit(nr, ng, nb, a)
-            }}
-            onPaste={(e) => {
-              const text = e.clipboardData.getData('text').trim()
-              const parsed = parseHexColor(text)
-              if (parsed) {
-                e.preventDefault()
+          <div className="flex items-center gap-1.5">
+            <button
+              className="text-[10px] font-mono px-2 py-1 rounded cursor-pointer shrink-0"
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-dim)',
+              }}
+              title="Copy hex color"
+              onClick={() => {
+                const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`
+                navigator.clipboard.writeText(hex)
+              }}
+            >
+              Copy
+            </button>
+            <button
+              className="text-[10px] font-mono px-2 py-1 rounded cursor-pointer shrink-0"
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-dim)',
+              }}
+              title="Paste hex color"
+              onClick={async () => {
+                try {
+                  const text = await navigator.clipboard.readText()
+                  const parsed = parseHexColor(text.trim())
+                  if (!parsed) return
+                  const [nr, ng, nb] = parsed
+                  setR(nr); setG(ng); setB(nb)
+                  setHue(rgbToHue(nr, ng, nb))
+                  emit(nr, ng, nb, a)
+                } catch { /* clipboard access denied */ }
+              }}
+            >
+              Paste
+            </button>
+            <input
+              type="text"
+              value={`#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`}
+              onChange={(e) => {
+                const parsed = parseHexColor(e.target.value)
+                if (!parsed) return
                 const [nr, ng, nb] = parsed
                 setR(nr); setG(ng); setB(nb)
                 setHue(rgbToHue(nr, ng, nb))
                 emit(nr, ng, nb, a)
-              }
-            }}
-            className="w-full font-mono text-xs rounded px-2 py-1 outline-none"
-            style={{
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border)',
-              color: 'var(--text)',
-            }}
-            spellCheck={false}
-          />
+              }}
+              onPaste={(e) => {
+                const text = e.clipboardData.getData('text').trim()
+                const parsed = parseHexColor(text)
+                if (parsed) {
+                  e.preventDefault()
+                  const [nr, ng, nb] = parsed
+                  setR(nr); setG(ng); setB(nb)
+                  setHue(rgbToHue(nr, ng, nb))
+                  emit(nr, ng, nb, a)
+                }
+              }}
+              className="flex-1 font-mono text-xs rounded px-2 py-1 outline-none mr-5"
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
+                minWidth: 0,
+              }}
+              spellCheck={false}
+            />
+          </div>
         </div>
 
         {/* Preview + eyedropper + transparent + done */}

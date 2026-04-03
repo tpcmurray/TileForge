@@ -171,6 +171,22 @@ export function MenuBar() {
       {/* Separator */}
       <div className="w-px h-4 mr-2" style={{ background: 'var(--border)' }} />
 
+      {/* Save All button */}
+      <button
+        className="px-2 py-1 text-[11px] font-mono rounded cursor-pointer mr-1"
+        style={{
+          color: Object.values(modeDirty).some(Boolean) ? 'var(--accent)' : 'var(--text-dim)',
+          background: 'transparent',
+          border: '1px solid var(--border)',
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-hover)' }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+        onClick={() => saveAll()}
+        title="Save All (Ctrl+Shift+S)"
+      >
+        Save All
+      </button>
+
       {/* Menu triggers */}
       {menuNames.map((item) => (
         <div key={item} className="relative">
