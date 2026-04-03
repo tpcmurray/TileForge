@@ -88,20 +88,19 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
     if (!eyedropperActive) return
 
     const handleClick = (e: MouseEvent) => {
-      const mapCanvas = document.querySelector('canvas[data-map]') as HTMLCanvasElement | null
-      if (!mapCanvas) return
+      const el = document.elementFromPoint(e.clientX, e.clientY)
+      const canvas = el instanceof HTMLCanvasElement ? el : null
+      if (!canvas) return
 
-      const rect = mapCanvas.getBoundingClientRect()
+      const rect = canvas.getBoundingClientRect()
       const x = e.clientX - rect.left
       const y = e.clientY - rect.top
-
-      if (x < 0 || y < 0 || x >= rect.width || y >= rect.height) return
 
       e.preventDefault()
       e.stopPropagation()
 
       const dpr = window.devicePixelRatio || 1
-      const ctx = mapCanvas.getContext('2d')
+      const ctx = canvas.getContext('2d')
       if (!ctx) return
       const pixel = ctx.getImageData(Math.round(x * dpr), Math.round(y * dpr), 1, 1).data
       const nr = pixel[0], ng = pixel[1], nb = pixel[2]
@@ -115,10 +114,12 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
       if (e.key === 'Escape') setEyedropperActive(false)
     }
 
+    document.body.style.cursor = 'crosshair'
     window.addEventListener('mousedown', handleClick, { capture: true })
     window.addEventListener('keydown', handleKey)
 
     return () => {
+      document.body.style.cursor = ''
       window.removeEventListener('mousedown', handleClick, { capture: true })
       window.removeEventListener('keydown', handleKey)
     }
@@ -130,6 +131,7 @@ export function ColorPicker({ color, onChange, onClose, showTransparent }: Color
       style={{
         background: 'transparent',
         cursor: eyedropperActive ? 'crosshair' : undefined,
+        pointerEvents: eyedropperActive ? 'none' : undefined,
       }}
       onClick={(e) => {
         if (eyedropperActive) return // let the eyedropper handler deal with it

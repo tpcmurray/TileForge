@@ -1,8 +1,8 @@
 import { cp437ToUnicode } from '../utils/cp437'
 
-/** The cell size used for glyph rendering (1:2 ratio matching 8×16 characters) */
-export const CELL_W = 8
-export const CELL_H = 16
+/** The cell size used for glyph rendering (1:2 ratio matching CP437 characters) */
+export const CELL_W = 16
+export const CELL_H = 32
 
 /** 16×16 grid = 256 glyphs */
 const ATLAS_COLS = 16
@@ -10,6 +10,42 @@ const ATLAS_ROWS = 16
 
 let atlasCanvas: OffscreenCanvas | null = null
 let atlasReady = false
+
+type BlockDraw = (ctx: OffscreenCanvasRenderingContext2D, x: number, y: number, w: number, h: number) => void
+
+/** CP437 block/shade characters drawn as geometric fills for pixel-perfect rendering */
+const BLOCK_GLYPHS: Record<number, BlockDraw> = {
+  // 176 ░ Light Shade
+  0xB0: (ctx, x, y, w, h) => {
+    for (let py = 0; py < h; py += 2)
+      for (let px = (py % 4 === 0 ? 0 : 1); px < w; px += 2)
+        ctx.fillRect(x + px, y + py, 1, 1)
+  },
+  // 177 ▒ Medium Shade
+  0xB1: (ctx, x, y, w, h) => {
+    for (let py = 0; py < h; py++)
+      for (let px = (py % 2 === 0 ? 0 : 1); px < w; px += 2)
+        ctx.fillRect(x + px, y + py, 1, 1)
+  },
+  // 178 ▓ Dark Shade
+  0xB2: (ctx, x, y, w, h) => {
+    ctx.fillRect(x, y, w, h)
+    ctx.clearRect(x, y, 0, 0) // no-op to keep consistent
+    for (let py = 0; py < h; py += 2)
+      for (let px = (py % 4 === 0 ? 0 : 1); px < w; px += 2)
+        ctx.clearRect(x + px, y + py, 1, 1)
+  },
+  // 219 █ Full Block
+  0xDB: (ctx, x, y, w, h) => { ctx.fillRect(x, y, w, h) },
+  // 220 ▄ Lower Half Block
+  0xDC: (ctx, x, y, w, h) => { ctx.fillRect(x, y + Math.floor(h / 2), w, Math.ceil(h / 2)) },
+  // 221 ▌ Left Half Block
+  0xDD: (ctx, x, y, w, h) => { ctx.fillRect(x, y, Math.floor(w / 2), h) },
+  // 222 ▐ Right Half Block
+  0xDE: (ctx, x, y, w, h) => { ctx.fillRect(x + Math.floor(w / 2), y, Math.ceil(w / 2), h) },
+  // 223 ▀ Upper Half Block
+  0xDF: (ctx, x, y, w, h) => { ctx.fillRect(x, y, w, Math.floor(h / 2)) },
+}
 
 /**
  * Build the CP437 font atlas on an offscreen canvas.
@@ -34,12 +70,21 @@ export function buildAtlas(): void {
   for (let i = 0; i < 256; i++) {
     const col = i % ATLAS_COLS
     const row = Math.floor(i / ATLAS_COLS)
-    const x = col * CELL_W + CELL_W / 2
-    const y = row * CELL_H + CELL_H / 2
-    const ch = cp437ToUnicode(i)
+    const cx = col * CELL_W
+    const cy = row * CELL_H
+
     // Skip null character (index 0) and nbsp (index 255)
     if (i === 0 || i === 255) continue
-    ctx.fillText(ch, x, y)
+
+    // Block/shade characters: draw as geometric fills for pixel-perfect edges
+    const block = BLOCK_GLYPHS[i]
+    if (block) {
+      block(ctx, cx, cy, CELL_W, CELL_H)
+      continue
+    }
+
+    const ch = cp437ToUnicode(i)
+    ctx.fillText(ch, cx + CELL_W / 2, cy + CELL_H / 2)
   }
 
   atlasReady = true

@@ -1,6 +1,8 @@
 import { useRef, useEffect, useCallback } from 'react'
 import type { SpriteCell } from '../../types/sprite'
 import { rgbaToCSS, drawCheckerboard } from '../../rendering/tinting'
+import { drawGlyph } from '../../rendering/atlas'
+import { unicodeToCP437 } from '../../utils/cp437'
 
 interface Props {
   grid: SpriteCell[][]
@@ -45,11 +47,6 @@ export function SpriteGridCanvas({
 
     ctx.clearRect(0, 0, canvasW, canvasH)
 
-    const fontSize = Math.max(10, cellH * 0.65)
-    ctx.font = `${fontSize}px monospace`
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-
     for (let r = 0; r < height; r++) {
       for (let c = 0; c < width; c++) {
         const cell = grid[r]?.[c]
@@ -65,10 +62,20 @@ export function SpriteGridCanvas({
           ctx.fillRect(x, y, cellW, cellH)
         }
 
-        // Glyph
+        // Glyph — use atlas for pixel-perfect rendering matching the game
         if (cell.glyph && cell.glyph !== ' ') {
-          ctx.fillStyle = rgbaToCSS(cell.fg)
-          ctx.fillText(cell.glyph, x + cellW / 2, y + cellH / 2)
+          const cp437 = unicodeToCP437(cell.glyph)
+          if (cp437 !== undefined && cp437 > 0) {
+            drawGlyph(ctx, cp437, x, y, cellW, cellH, rgbaToCSS(cell.fg))
+          } else {
+            // Fallback for non-CP437 characters
+            const fontSize = Math.max(10, cellH * 0.65)
+            ctx.font = `${fontSize}px monospace`
+            ctx.textAlign = 'center'
+            ctx.textBaseline = 'middle'
+            ctx.fillStyle = rgbaToCSS(cell.fg)
+            ctx.fillText(cell.glyph, x + cellW / 2, y + cellH / 2)
+          }
         }
       }
     }
