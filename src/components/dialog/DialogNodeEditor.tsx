@@ -104,7 +104,7 @@ export function DialogNodeEditor() {
               background: 'var(--bg-dark)',
               color: 'var(--text)',
               border: '1px solid var(--border)',
-              minHeight: 80,
+              minHeight: 300,
             }}
             value={node.text ?? ''}
             onChange={(e) => update({ text: e.target.value || undefined })}

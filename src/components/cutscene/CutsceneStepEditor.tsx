@@ -4,7 +4,7 @@ import type { CutsceneStep, CutsceneTrigger } from '../../types/cutscene'
 const ACTION_TYPES = [
   'wait', 'banner', 'play_sfx', 'spawn_npc', 'spawn',
   'camera_lock', 'camera_pan', 'camera_release',
-  'move', 'dialogue', 'sprite_state',
+  'move', 'walk_path', 'dialogue', 'sprite_state',
   'zone_transition', 'set_light', 'remove_light',
   'set_flag', 'despawn', 'heal',
 ]
@@ -170,7 +170,12 @@ function StepTypeFields({
       )
 
     case 'play_sfx':
-      return <TextInput label="SFX ID" value={step.text as string} onChange={(v) => set('text', v)} />
+      return (
+        <>
+          <TextInput label="SFX ID" value={step.text as string} onChange={(v) => set('text', v)} />
+          <TextInput label="Volume" value={step.volume as number ?? 1} onChange={(v) => setNum('volume', v)} type="number" />
+        </>
+      )
 
     case 'spawn_npc':
       return (
@@ -219,6 +224,33 @@ function StepTypeFields({
           <TextInput label="X" value={step.x as number} onChange={(v) => setNum('x', v)} type="number" />
           <TextInput label="Y" value={step.y as number} onChange={(v) => setNum('y', v)} type="number" />
           <TextInput label="Speed" value={step.speed as number} onChange={(v) => setNum('speed', v)} type="number" />
+        </>
+      )
+
+    case 'walk_path':
+      return (
+        <>
+          <TextInput label="Entity Type" value={step.entity_type as string} onChange={(v) => set('entity_type', v)} />
+          <TextInput label="Entity ID" value={step.entity_id as string} onChange={(v) => set('entity_id', v)} />
+          <Field label="Despawn at end">
+            <label className="flex items-center gap-2 text-xs font-mono" style={{ color: 'var(--text)' }}>
+              <input
+                type="checkbox"
+                checked={!!step.despawn}
+                onChange={(e) => {
+                  const updated = { ...step }
+                  if (e.target.checked) updated.despawn = true
+                  else delete updated.despawn
+                  onChange(updated)
+                }}
+              />
+              Despawn
+            </label>
+          </Field>
+          <WaypointList
+            waypoints={(step.waypoints as Waypoint[] | undefined) ?? []}
+            onChange={(wps) => set('waypoints', wps)}
+          />
         </>
       )
 
@@ -336,5 +368,81 @@ function TriggerFields({
       <TextInput label="Flag (required)" value={trigger.flag} onChange={(v) => set({ flag: v || undefined })} />
       <TextInput label="Flag Absent (required)" value={trigger.flag_absent} onChange={(v) => set({ flag_absent: v || undefined })} />
     </>
+  )
+}
+
+interface Waypoint {
+  x: number
+  y: number
+  speed: number
+}
+
+function WaypointList({
+  waypoints,
+  onChange,
+}: {
+  waypoints: Waypoint[]
+  onChange: (wps: Waypoint[]) => void
+}) {
+  const update = (i: number, patch: Partial<Waypoint>) => {
+    const next = waypoints.map((w, j) => (j === i ? { ...w, ...patch } : w))
+    onChange(next)
+  }
+  const remove = (i: number) => onChange(waypoints.filter((_, j) => j !== i))
+  const add = () => onChange([...waypoints, { x: 0, y: 0, speed: 4 }])
+
+  return (
+    <Field label="Waypoints">
+      <div className="flex flex-col gap-1.5">
+        {waypoints.map((wp, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-1 text-xs font-mono rounded px-1.5 py-1"
+            style={{ background: 'var(--bg-dark)', border: '1px solid var(--border)' }}
+          >
+            <span style={{ color: 'var(--text-dim)', fontSize: 9, width: 14 }}>{i}</span>
+            <input
+              className="w-12 px-1 py-0.5 rounded text-center"
+              style={{ background: 'var(--bg-panel)', color: 'var(--text)', border: '1px solid var(--border)' }}
+              type="number"
+              value={wp.x}
+              onChange={(e) => { const n = Number(e.target.value); if (!isNaN(n)) update(i, { x: n }) }}
+              title="X"
+            />
+            <input
+              className="w-12 px-1 py-0.5 rounded text-center"
+              style={{ background: 'var(--bg-panel)', color: 'var(--text)', border: '1px solid var(--border)' }}
+              type="number"
+              value={wp.y}
+              onChange={(e) => { const n = Number(e.target.value); if (!isNaN(n)) update(i, { y: n }) }}
+              title="Y"
+            />
+            <input
+              className="w-10 px-1 py-0.5 rounded text-center"
+              style={{ background: 'var(--bg-panel)', color: 'var(--text)', border: '1px solid var(--border)' }}
+              type="number"
+              value={wp.speed}
+              onChange={(e) => { const n = Number(e.target.value); if (!isNaN(n)) update(i, { speed: n }) }}
+              title="Speed"
+            />
+            <button
+              className="px-1 rounded cursor-pointer"
+              style={{ color: 'var(--text-dim)', background: 'transparent', border: 'none' }}
+              onClick={() => remove(i)}
+              title="Remove waypoint"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+        <button
+          className="text-[10px] font-mono px-2 py-1 rounded cursor-pointer"
+          style={{ background: 'var(--bg-dark)', color: 'var(--accent)', border: '1px solid var(--border)' }}
+          onClick={add}
+        >
+          + Add Waypoint
+        </button>
+      </div>
+    </Field>
   )
 }

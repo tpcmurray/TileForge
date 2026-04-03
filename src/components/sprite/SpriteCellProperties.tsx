@@ -64,16 +64,18 @@ export function SpriteCellProperties({ npc }: { npc: SpriteVisualData }) {
         <div className="text-[10px] font-mono uppercase" style={{ color: 'var(--text-dim)' }}>
           Glyph:
         </div>
-        <div
-          className="w-8 h-8 flex items-center justify-center rounded font-mono text-lg"
+        <button
+          className="w-8 h-8 flex items-center justify-center rounded font-mono text-lg cursor-pointer"
           style={{
             background: 'var(--bg-surface)',
             border: '1px solid var(--border)',
             color: 'var(--text-bright)',
           }}
+          onClick={() => setShowGlyphPicker(true)}
+          title="Click to open glyph picker"
         >
           {currentGlyph === ' ' ? '\u00B7' : currentGlyph}
-        </div>
+        </button>
         <input
           type="text"
           placeholder="Type"
@@ -94,18 +96,6 @@ export function SpriteCellProperties({ npc }: { npc: SpriteVisualData }) {
             color: 'var(--text)',
           }}
         />
-        <button
-          className="text-[10px] font-mono px-2 py-1 rounded cursor-pointer"
-          style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--border)',
-            color: 'var(--text-dim)',
-          }}
-          onClick={() => setShowGlyphPicker(true)}
-          title="Open glyph picker"
-        >
-          CP437
-        </button>
         <button
           className="text-[10px] font-mono px-2 py-1 rounded cursor-pointer"
           style={{
