@@ -142,6 +142,7 @@ export function parseRegistry(json: string): RegistryParseResult {
         above: (t.above as boolean) ?? false,
         speedMod: t.speedMod as number,
         lightRadius: t.lightRadius as number,
+        noAnim: (t.noAnim as boolean) ?? false,
         ...(t.category ? { category: t.category as string } : {}),
       })
     }
@@ -166,6 +167,7 @@ export function serializeRegistry(tiles: TileDefinition[]): string {
       above: t.above,
       speedMod: t.speedMod,
       lightRadius: t.lightRadius,
+      ...(t.noAnim ? { noAnim: t.noAnim } : {}),
       ...(t.category ? { category: t.category } : {}),
     })),
   }

@@ -10,6 +10,7 @@ const TYPE_COLORS: Record<EntityType, string> = {
   CHEST: '#ffc832',
   SIGN: '#96ff96',
   TRIGGER: '#ffa03c',
+  LABEL: '#e0e0e0',
 }
 
 const TYPE_LABELS: Record<EntityType, string> = {
@@ -19,6 +20,7 @@ const TYPE_LABELS: Record<EntityType, string> = {
   CHEST: 'C',
   SIGN: '!',
   TRIGGER: 'T',
+  LABEL: 'L',
 }
 
 function entitySummary(e: Entity): string {
@@ -29,6 +31,7 @@ function entitySummary(e: Entity): string {
     case 'CHEST': return `${e.lootTable} lv${e.itemLevel}`
     case 'SIGN': return e.message.length > 20 ? e.message.slice(0, 20) + '…' : e.message
     case 'TRIGGER': return e.cutsceneId
+    case 'LABEL': return e.text.length > 20 ? e.text.slice(0, 20) + '…' : e.text
   }
 }
 
@@ -52,7 +55,7 @@ export function EntityPanel() {
   }
 
   // Group by type
-  const typeOrder: EntityType[] = ['SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER']
+  const typeOrder: EntityType[] = ['SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL']
   const grouped = typeOrder
     .map((type) => ({
       type,

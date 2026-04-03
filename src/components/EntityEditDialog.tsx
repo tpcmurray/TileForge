@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useStore } from '../store'
+import { ColorPicker } from './ColorPicker'
+import type { RGBA } from '../types'
 import type {
   Entity,
   EntityType,
@@ -9,6 +11,7 @@ import type {
   ChestEntity,
   SignEntity,
   TriggerEntity,
+  LabelEntity,
 } from '../types'
 
 interface Props {
@@ -17,7 +20,7 @@ interface Props {
   onClose: () => void
 }
 
-const ENTITY_TYPES: EntityType[] = ['SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER']
+const ENTITY_TYPES: EntityType[] = ['SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL']
 
 function makeDefault(type: EntityType, x: number, y: number): Entity {
   const base = { id: crypto.randomUUID(), x, y }
@@ -34,6 +37,8 @@ function makeDefault(type: EntityType, x: number, y: number): Entity {
       return { ...base, type: 'SIGN', message: '' }
     case 'TRIGGER':
       return { ...base, type: 'TRIGGER', w: 1, h: 1, cutsceneId: '', flag: null, absent: null }
+    case 'LABEL':
+      return { ...base, type: 'LABEL', fg: 'White', bg: 'Transparent', text: '' }
   }
 }
 
@@ -138,6 +143,7 @@ export function EntityEditDialog({ entity, defaultPos, onClose }: Props) {
         {data.type === 'CHEST' && <ChestFields data={data} update={update} />}
         {data.type === 'SIGN' && <SignFields data={data} update={update} />}
         {data.type === 'TRIGGER' && <TriggerFields data={data} update={update} />}
+        {data.type === 'LABEL' && <LabelFields data={data} update={update} />}
 
         {/* Actions */}
         <div className="flex items-center gap-2 mt-4">
@@ -290,6 +296,138 @@ function TriggerFields({ data, update }: { data: TriggerEntity; update: (p: Part
         <Label>Absent Flag (must NOT be set — leave blank for none)</Label>
         <TextInput value={data.absent ?? ''} onChange={(v) => update({ absent: v || null })} />
       </div>
+    </>
+  )
+}
+
+/** Parse a color string (named or hex) into RGBA */
+function colorStringToRGBA(s: string): RGBA {
+  const lower = s.toLowerCase()
+  if (lower === 'transparent') return { r: 0, g: 0, b: 0, a: 0 }
+
+  const NAMED: Record<string, RGBA> = {
+    white: { r: 255, g: 255, b: 255, a: 255 },
+    black: { r: 0, g: 0, b: 0, a: 255 },
+    red: { r: 255, g: 0, b: 0, a: 255 },
+    green: { r: 0, g: 128, b: 0, a: 255 },
+    blue: { r: 0, g: 0, b: 255, a: 255 },
+    yellow: { r: 255, g: 255, b: 0, a: 255 },
+    cyan: { r: 0, g: 255, b: 255, a: 255 },
+    magenta: { r: 255, g: 0, b: 255, a: 255 },
+    orange: { r: 255, g: 165, b: 0, a: 255 },
+    purple: { r: 128, g: 0, b: 128, a: 255 },
+    gold: { r: 255, g: 215, b: 0, a: 255 },
+    silver: { r: 192, g: 192, b: 192, a: 255 },
+    gray: { r: 128, g: 128, b: 128, a: 255 },
+    grey: { r: 128, g: 128, b: 128, a: 255 },
+  }
+  if (NAMED[lower]) return NAMED[lower]
+
+  // Parse hex
+  const hex = s.replace(/^#/, '')
+  if (/^[0-9a-f]{6}$/i.test(hex)) {
+    return {
+      r: parseInt(hex.slice(0, 2), 16),
+      g: parseInt(hex.slice(2, 4), 16),
+      b: parseInt(hex.slice(4, 6), 16),
+      a: 255,
+    }
+  }
+  if (/^[0-9a-f]{3}$/i.test(hex)) {
+    return {
+      r: parseInt(hex[0] + hex[0], 16),
+      g: parseInt(hex[1] + hex[1], 16),
+      b: parseInt(hex[2] + hex[2], 16),
+      a: 255,
+    }
+  }
+  return { r: 255, g: 255, b: 255, a: 255 }
+}
+
+/** Convert RGBA back to a color string for entity storage */
+function rgbaToColorString(c: RGBA): string {
+  if (c.a === 0) return 'Transparent'
+  return `#${c.r.toString(16).padStart(2, '0')}${c.g.toString(16).padStart(2, '0')}${c.b.toString(16).padStart(2, '0')}`
+}
+
+/** CSS-renderable color from entity color string */
+function colorStringToCSS(s: string): string {
+  const lower = s.toLowerCase()
+  if (lower === 'transparent') return 'transparent'
+  // Named colors and hex values are valid CSS
+  return s
+}
+
+function LabelFields({ data, update }: { data: LabelEntity; update: (p: Partial<LabelEntity>) => void }) {
+  const [pickTarget, setPickTarget] = useState<'fg' | 'bg' | null>(null)
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div>
+          <Label>Foreground</Label>
+          <div className="flex items-center gap-2">
+            <button
+              className="w-8 h-8 rounded shrink-0 cursor-pointer"
+              style={{
+                background: colorStringToCSS(data.fg),
+                border: '2px solid var(--border-light)',
+              }}
+              onClick={() => setPickTarget('fg')}
+            />
+            <span className="font-mono text-[10px] truncate" style={{ color: 'var(--text-dim)' }}>
+              {data.fg}
+            </span>
+          </div>
+        </div>
+        <div>
+          <Label>Background</Label>
+          <div className="flex items-center gap-2">
+            <button
+              className="w-8 h-8 rounded shrink-0 cursor-pointer"
+              style={{
+                background: data.bg.toLowerCase() === 'transparent'
+                  ? 'repeating-conic-gradient(#444 0% 25%, #666 0% 50%) 50% / 12px 12px'
+                  : colorStringToCSS(data.bg),
+                border: '2px solid var(--border-light)',
+              }}
+              onClick={() => setPickTarget('bg')}
+            />
+            <span className="font-mono text-[10px] truncate" style={{ color: 'var(--text-dim)' }}>
+              {data.bg}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="mb-3">
+        <Label>Text</Label>
+        <TextInput value={data.text} onChange={(v) => update({ text: v })} />
+      </div>
+      {/* Label text preview */}
+      <div className="mb-3 rounded px-2 py-1.5 font-mono text-sm" style={{
+        background: data.bg.toLowerCase() === 'transparent'
+          ? 'repeating-conic-gradient(#444 0% 25%, #666 0% 50%) 50% / 12px 12px'
+          : colorStringToCSS(data.bg),
+        color: colorStringToCSS(data.fg),
+        border: '1px solid var(--border)',
+      }}>
+        {data.text || '(empty)'}
+      </div>
+      {pickTarget === 'fg' && (
+        <ColorPicker
+          color={colorStringToRGBA(data.fg)}
+          onChange={(c) => update({ fg: rgbaToColorString(c) })}
+          onClose={() => setPickTarget(null)}
+        />
+      )}
+      {pickTarget === 'bg' && (
+        <ColorPicker
+          color={colorStringToRGBA(data.bg)}
+          onChange={(c) => update({ bg: rgbaToColorString(c) })}
+          onClose={() => setPickTarget(null)}
+          showTransparent
+        />
+      )}
     </>
   )
 }

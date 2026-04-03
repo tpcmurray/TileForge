@@ -1,4 +1,4 @@
-import type { Entity, DoorEntity, SpawnEntity, NpcEntity, ChestEntity, SignEntity, TriggerEntity } from '../types'
+import type { Entity, DoorEntity, SpawnEntity, NpcEntity, ChestEntity, SignEntity, TriggerEntity, LabelEntity } from '../types'
 
 export interface EntitiesParseResult {
   entities: Entity[]
@@ -181,6 +181,57 @@ function parseTrigger(tokens: string[], lineNum: number): { entity: TriggerEntit
   }
 }
 
+/** Check if a token looks like a color: named color or #hex */
+function isColorToken(s: string): boolean {
+  if (s.startsWith('#')) return true
+  const named = s.toLowerCase()
+  return ['white', 'black', 'red', 'green', 'blue', 'yellow', 'cyan', 'magenta',
+    'orange', 'purple', 'gold', 'silver', 'gray', 'grey', 'transparent'].includes(named)
+}
+
+function parseLabel(tokens: string[], line: string, lineNum: number): { entity: LabelEntity; error?: string } | { entity?: never; error: string } {
+  // LABEL x,y fg bg text...
+  if (tokens.length < 5) return { error: `Line ${lineNum}: LABEL requires position, fg, bg, and text` }
+
+  const pos = parseCoord(tokens[1])
+  if (!pos) return { error: `Line ${lineNum}: LABEL invalid position "${tokens[1]}"` }
+
+  const fg = tokens[2]
+  const bg = tokens[3]
+
+  if (!isColorToken(fg)) return { error: `Line ${lineNum}: LABEL invalid foreground color "${fg}"` }
+  if (!isColorToken(bg)) return { error: `Line ${lineNum}: LABEL invalid background color "${bg}"` }
+
+  // Text is everything after the 4th token
+  // Find position of the bg token in the line, then take everything after it
+  let afterBg = 0
+  let tokensSeen = 0
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] !== ' ' && line[i] !== '\t') {
+      // Find end of this token
+      let j = i
+      while (j < line.length && line[j] !== ' ' && line[j] !== '\t') j++
+      tokensSeen++
+      if (tokensSeen === 4) {
+        afterBg = j
+        break
+      }
+      i = j - 1
+    }
+  }
+  const text = line.slice(afterBg).trim()
+  if (!text) return { error: `Line ${lineNum}: LABEL requires text` }
+
+  return {
+    entity: {
+      id: crypto.randomUUID(),
+      type: 'LABEL',
+      x: pos.x, y: pos.y,
+      fg, bg, text,
+    },
+  }
+}
+
 export function parseEntities(text: string): EntitiesParseResult {
   const lines = text.split(/\r?\n/)
   const entities: Entity[] = []
@@ -219,6 +270,9 @@ export function parseEntities(text: string): EntitiesParseResult {
       case 'TRIGGER':
         result = parseTrigger(tokens, i + 1)
         break
+      case 'LABEL':
+        result = parseLabel(tokens, line, i + 1)
+        break
       default:
         unknownLines.push(lines[i])
         continue
@@ -256,6 +310,8 @@ function serializeEntity(e: Entity): string {
       if (e.absent) line += ` absent:${e.absent}`
       return line
     }
+    case 'LABEL':
+      return `LABEL ${e.x},${e.y} ${e.fg} ${e.bg} ${e.text}`
   }
 }
 
@@ -274,7 +330,7 @@ export function serializeEntities(
   }
 
   // Group entities by type for readability
-  const typeOrder: Entity['type'][] = ['SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER']
+  const typeOrder: Entity['type'][] = ['SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL']
   for (const type of typeOrder) {
     const group = entities.filter((e) => e.type === type)
     if (group.length === 0) continue

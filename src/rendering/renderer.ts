@@ -215,6 +215,7 @@ const ENTITY_COLORS: Record<string, string> = {
   CHEST: 'rgba(255,200,50,0.7)',
   SIGN: 'rgba(150,255,150,0.7)',
   TRIGGER: 'rgba(255,160,60,0.7)',
+  LABEL: 'rgba(224,224,224,0.7)',
 }
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -224,6 +225,7 @@ const ENTITY_LABELS: Record<string, string> = {
   CHEST: 'C',
   SIGN: '!',
   TRIGGER: 'T',
+  LABEL: 'L',
 }
 
 function renderEntities(
@@ -255,6 +257,38 @@ function renderEntities(
     const y = panY + e.y * cellH
     const w = ew * cellW
     const h = eh * cellH
+
+    // LABEL entities: render actual text with fg/bg colors
+    if (e.type === 'LABEL') {
+      const labelFontSize = Math.max(8, cellH * 0.45)
+      ctx.font = `bold ${labelFontSize}px monospace`
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'top'
+      const textWidth = ctx.measureText(e.text).width
+      const padX = labelFontSize * 0.3
+      const padY = labelFontSize * 0.15
+      const bgColor = e.bg.toLowerCase()
+      if (bgColor !== 'transparent') {
+        ctx.fillStyle = bgColor
+        ctx.fillRect(x, y, textWidth + padX * 2, labelFontSize + padY * 2)
+      }
+      ctx.fillStyle = e.fg
+      ctx.fillText(e.text, x + padX, y + padY)
+      // Restore alignment for other entities
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.font = `bold ${fontSize}px monospace`
+
+      // Selected highlight
+      if (e.id === selectedId) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)'
+        ctx.lineWidth = 2
+        ctx.setLineDash([6, 3])
+        ctx.strokeRect(x - 1, y - 1, textWidth + padX * 2 + 2, labelFontSize + padY * 2 + 2)
+        ctx.setLineDash([])
+      }
+      continue
+    }
 
     // Filled rect
     ctx.fillStyle = ENTITY_COLORS[e.type] ?? 'rgba(128,128,128,0.7)'

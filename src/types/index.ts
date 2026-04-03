@@ -32,6 +32,8 @@ export interface TileDefinition {
   speedMod: number
   /** Light emission radius (0 = none) */
   lightRadius: number
+  /** Disable flicker animation for non-fire light sources */
+  noAnim: boolean
   /** Optional category for palette grouping */
   category?: string
 }
@@ -69,7 +71,7 @@ export type ToolType = 'paint' | 'erase' | 'pick' | 'entity' | 'copy' | 'paste'
 
 // ── Entity types ──
 
-export type EntityType = 'DOOR' | 'SPAWN' | 'NPC' | 'CHEST' | 'SIGN' | 'TRIGGER'
+export type EntityType = 'DOOR' | 'SPAWN' | 'NPC' | 'CHEST' | 'SIGN' | 'TRIGGER' | 'LABEL'
 
 interface EntityBase {
   id: string
@@ -118,7 +120,14 @@ export interface TriggerEntity extends EntityBase {
   absent: string | null
 }
 
-export type Entity = DoorEntity | SpawnEntity | NpcEntity | ChestEntity | SignEntity | TriggerEntity
+export interface LabelEntity extends EntityBase {
+  type: 'LABEL'
+  fg: string
+  bg: string
+  text: string
+}
+
+export type Entity = DoorEntity | SpawnEntity | NpcEntity | ChestEntity | SignEntity | TriggerEntity | LabelEntity
 
 /** Rectangular selection on the map */
 export interface Selection {

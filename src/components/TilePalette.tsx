@@ -140,7 +140,7 @@ export function TilePalette() {
           >
             {category}
           </div>
-          <div className="grid grid-cols-5 gap-0.5 mb-1.5">
+          <div className="grid grid-cols-8 gap-0.5 mb-1.5">
             {catTiles.map((t) => (
               <PaletteTile
                 key={t.code}
@@ -220,7 +220,7 @@ function PaletteTile({
 
   return (
     <div
-      className="flex flex-col items-center justify-center rounded cursor-pointer border transition-all"
+      className="flex items-center justify-center rounded cursor-pointer border transition-all"
       style={{
         aspectRatio: '1/2',
         background: rgbaToCSS(tile.bg),
@@ -233,16 +233,10 @@ function PaletteTile({
       onContextMenu={onContextMenu}
     >
       <span
-        className="font-mono text-base leading-none"
+        className="font-mono text-xs leading-none"
         style={{ color: rgbaToCSS(tile.fg) }}
       >
         {ch}
-      </span>
-      <span
-        className="font-mono text-[9px] mt-0.5"
-        style={{ color: 'var(--text-dim)' }}
-      >
-        {tile.code}
       </span>
     </div>
   )
