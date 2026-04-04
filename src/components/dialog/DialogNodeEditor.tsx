@@ -308,45 +308,71 @@ function EffectRow({
   onChange: (p: Partial<DialogEffect>) => void
   onRemove: () => void
 }) {
+  const inputStyle = { background: 'var(--bg-panel)', color: 'var(--text)', border: '1px solid var(--border)' }
+
   return (
     <div
-      className="p-2 rounded flex items-center gap-1"
+      className="p-2 rounded flex flex-col gap-1"
       style={{ background: 'var(--bg-dark)', border: '1px solid var(--border)' }}
     >
-      <select
-        className="px-1 py-0.5 text-[10px] font-mono rounded"
-        style={{ background: 'var(--bg-panel)', color: 'var(--text)', border: '1px solid var(--border)' }}
-        value={effect.type}
-        onChange={(e) => onChange({ type: e.target.value })}
-      >
-        <option value="reputation">reputation</option>
-        <option value="quest">quest</option>
-        <option value="set_flag">set_flag</option>
-      </select>
-      <input
-        className="flex-1 px-1 py-0.5 text-[10px] font-mono rounded"
-        style={{ background: 'var(--bg-panel)', color: 'var(--text)', border: '1px solid var(--border)' }}
-        placeholder={effect.type === 'reputation' ? 'npc' : 'key'}
-        value={effect.npc ?? effect.key ?? ''}
-        onChange={(e) => {
-          if (effect.type === 'reputation') onChange({ npc: e.target.value })
-          else onChange({ key: e.target.value })
-        }}
-      />
-      <input
-        className="w-12 px-1 py-0.5 text-[10px] font-mono rounded text-center"
-        style={{ background: 'var(--bg-panel)', color: 'var(--text)', border: '1px solid var(--border)' }}
-        placeholder="val"
-        value={effect.value != null ? String(effect.value) : ''}
-        onChange={(e) => onChange({ value: e.target.value ? (isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)) : undefined })}
-      />
-      <button
-        className="px-1 py-0.5 text-[10px] font-mono rounded cursor-pointer"
-        style={{ color: 'var(--error)', border: '1px solid var(--border)' }}
-        onClick={onRemove}
-      >
-        ×
-      </button>
+      <div className="flex items-center gap-1">
+        <select
+          className="px-1 py-0.5 text-[10px] font-mono rounded"
+          style={inputStyle}
+          value={effect.type}
+          onChange={(e) => onChange({ type: e.target.value })}
+        >
+          <option value="reputation">reputation</option>
+          <option value="quest">quest</option>
+          <option value="set_flag">set_flag</option>
+          <option value="give_ability">give_ability</option>
+          <option value="give_item">give_item</option>
+        </select>
+        <button
+          className="px-1 py-0.5 text-[10px] font-mono rounded cursor-pointer ml-auto"
+          style={{ color: 'var(--error)', border: '1px solid var(--border)' }}
+          onClick={onRemove}
+        >
+          ×
+        </button>
+      </div>
+      <div className="flex items-center gap-1">
+        {effect.type === 'reputation' ? (
+          <input
+            className="flex-1 px-1 py-0.5 text-[10px] font-mono rounded"
+            style={inputStyle}
+            placeholder="npc"
+            value={effect.npc ?? ''}
+            onChange={(e) => onChange({ npc: e.target.value || undefined })}
+          />
+        ) : (
+          <input
+            className="flex-1 px-1 py-0.5 text-[10px] font-mono rounded"
+            style={inputStyle}
+            placeholder="key"
+            value={effect.key ?? ''}
+            onChange={(e) => onChange({ key: e.target.value || undefined })}
+          />
+        )}
+        <input
+          className="w-12 px-1 py-0.5 text-[10px] font-mono rounded text-center"
+          style={inputStyle}
+          placeholder="val"
+          value={effect.value != null ? String(effect.value) : ''}
+          onChange={(e) => onChange({ value: e.target.value ? (isNaN(Number(e.target.value)) ? e.target.value : Number(e.target.value)) : undefined })}
+        />
+      </div>
+      {(effect.type === 'give_ability' || effect.type === 'give_item') && (
+        <div className="flex items-center gap-1">
+          <input
+            className="flex-1 px-1 py-0.5 text-[10px] font-mono rounded"
+            style={inputStyle}
+            placeholder="npc (e.g. slot:6)"
+            value={effect.npc ?? ''}
+            onChange={(e) => onChange({ npc: e.target.value || undefined })}
+          />
+        </div>
+      )}
     </div>
   )
 }

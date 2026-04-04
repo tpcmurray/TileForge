@@ -119,6 +119,9 @@ export interface TileForgeState {
   setSpriteActiveState: (s: string) => void
   copySpriteState: (from: string, to: string) => void
   expandSpriteGrid: (direction: 'top' | 'bottom' | 'left' | 'right') => void
+  addSpriteState: (name: string) => void
+  renameSpriteState: (oldName: string, newName: string) => void
+  pasteSpriteState: (targetState: string, source: SpriteState) => void
 
   // ── Dialog Slice ──
   dialogTrees: DialogTree[]
@@ -617,6 +620,61 @@ export const useStore = create<TileForgeState>((set, get) => ({
         updatedSprite[name] = { rows, width, height }
       }
 
+      const updated = { ...item, sprite: updatedSprite }
+      return {
+        sprites: s.sprites.map((n) => (n.id === s.selectedSpriteId ? updated : n)),
+        spritesDirty: true,
+      }
+    }),
+
+  addSpriteState: (name) =>
+    set((s) => {
+      const item = s.sprites.find((n) => n.id === s.selectedSpriteId)
+      if (!item) return s
+      if (item.sprite[name]) return s // already exists
+
+      // Use dimensions from first existing state, or default 5x5
+      const existing = Object.values(item.sprite)[0]
+      const width = existing?.width ?? 5
+      const height = existing?.height ?? 5
+      const blank: SpriteCell = { glyph: ' ', fg: { r: 255, g: 255, b: 255, a: 255 }, bg: { r: 0, g: 0, b: 0, a: 0 } }
+      const rows = Array.from({ length: height }, () =>
+        Array.from({ length: width }, () => ({ ...blank })),
+      )
+      const updatedSprite = { ...item.sprite, [name]: { rows, width, height } }
+      const updated = { ...item, sprite: updatedSprite }
+      return {
+        sprites: s.sprites.map((n) => (n.id === s.selectedSpriteId ? updated : n)),
+        spritesDirty: true,
+      }
+    }),
+
+  renameSpriteState: (oldName, newName) =>
+    set((s) => {
+      const item = s.sprites.find((n) => n.id === s.selectedSpriteId)
+      if (!item || !item.sprite[oldName] || oldName === newName) return s
+      if (item.sprite[newName]) return s // target name already exists
+
+      const updatedSprite: Record<string, SpriteState> = {}
+      for (const [name, state] of Object.entries(item.sprite)) {
+        updatedSprite[name === oldName ? newName : name] = state
+      }
+      const updated = { ...item, sprite: updatedSprite }
+      return {
+        sprites: s.sprites.map((n) => (n.id === s.selectedSpriteId ? updated : n)),
+        spritesDirty: true,
+      }
+    }),
+
+  pasteSpriteState: (targetState, source) =>
+    set((s) => {
+      const item = s.sprites.find((n) => n.id === s.selectedSpriteId)
+      if (!item || !item.sprite[targetState]) return s
+      const copy: SpriteState = {
+        ...source,
+        rows: source.rows.map((row) => row.map((cell) => ({ ...cell }))),
+      }
+      const updatedSprite = { ...item.sprite, [targetState]: copy }
       const updated = { ...item, sprite: updatedSprite }
       return {
         sprites: s.sprites.map((n) => (n.id === s.selectedSpriteId ? updated : n)),
