@@ -15,6 +15,7 @@ export function SpriteStatesEditor({ npc }: { npc: SpriteVisualData }) {
   const setCurrentFg = useStore((s) => s.setSpriteCurrentFg)
   const setCurrentBg = useStore((s) => s.setSpriteCurrentBg)
   const copySpriteState = useStore((s) => s.copySpriteState)
+  const expandGrid = useStore((s) => s.expandSpriteGrid)
 
   const stateNames = Object.keys(npc.sprite)
 
@@ -49,6 +50,23 @@ export function SpriteStatesEditor({ npc }: { npc: SpriteVisualData }) {
       <div className="flex items-center gap-3 mb-2">
         <div className="text-xs font-mono font-semibold" style={{ color: 'var(--text-bright)' }}>
           Sprite States
+        </div>
+        <div className="flex gap-0.5">
+          {(['top', 'bottom', 'left', 'right'] as const).map((dir) => (
+            <button
+              key={dir}
+              className="text-[10px] font-mono px-1.5 py-0.5 rounded cursor-pointer"
+              style={{
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-dim)',
+              }}
+              onClick={() => expandGrid(dir)}
+              title={`Add blank ${dir === 'top' || dir === 'bottom' ? 'row' : 'column'} to ${dir}`}
+            >
+              {{ top: '\u2191', bottom: '\u2193', left: '\u2190', right: '\u2192' }[dir]}
+            </button>
+          ))}
         </div>
         {stateNames.length >= 2 && (
           <select

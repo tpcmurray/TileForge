@@ -118,6 +118,7 @@ export interface TileForgeState {
   setSpriteSelectedCell: (pos: { target: string; row: number; col: number } | null) => void
   setSpriteActiveState: (s: string) => void
   copySpriteState: (from: string, to: string) => void
+  expandSpriteGrid: (direction: 'top' | 'bottom' | 'left' | 'right') => void
 
   // ── Dialog Slice ──
   dialogTrees: DialogTree[]
@@ -576,6 +577,46 @@ export const useStore = create<TileForgeState>((set, get) => ({
         rows: source.rows.map((row) => row.map((cell) => ({ ...cell }))),
       }
       const updatedSprite = { ...item.sprite, [to]: copy }
+      const updated = { ...item, sprite: updatedSprite }
+      return {
+        sprites: s.sprites.map((n) => (n.id === s.selectedSpriteId ? updated : n)),
+        spritesDirty: true,
+      }
+    }),
+
+  expandSpriteGrid: (direction) =>
+    set((s) => {
+      const item = s.sprites.find((n) => n.id === s.selectedSpriteId)
+      if (!item) return s
+
+      const blank: SpriteCell = { glyph: ' ', fg: { r: 255, g: 255, b: 255, a: 255 }, bg: { r: 0, g: 0, b: 0, a: 0 } }
+      const updatedSprite: Record<string, SpriteState> = {}
+
+      for (const [name, state] of Object.entries(item.sprite)) {
+        let { rows, width, height } = state
+        rows = rows.map((r) => [...r])
+
+        switch (direction) {
+          case 'top':
+            rows = [Array.from({ length: width }, () => ({ ...blank })), ...rows]
+            height += 1
+            break
+          case 'bottom':
+            rows = [...rows, Array.from({ length: width }, () => ({ ...blank }))]
+            height += 1
+            break
+          case 'left':
+            rows = rows.map((r) => [{ ...blank }, ...r])
+            width += 1
+            break
+          case 'right':
+            rows = rows.map((r) => [...r, { ...blank }])
+            width += 1
+            break
+        }
+        updatedSprite[name] = { rows, width, height }
+      }
+
       const updated = { ...item, sprite: updatedSprite }
       return {
         sprites: s.sprites.map((n) => (n.id === s.selectedSpriteId ? updated : n)),
