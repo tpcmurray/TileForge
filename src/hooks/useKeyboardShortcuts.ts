@@ -53,6 +53,7 @@ export function useKeyboardShortcuts() {
               })
             } else {
               (window as any).showSaveFilePicker({
+                id: 'sprite',
                 suggestedName: 'sprites.json',
                 types: [{ description: 'Sprite JSON', accept: { 'application/json': ['.json'] } }],
               }).then(async (handle: FileSystemFileHandle) => {
@@ -79,6 +80,7 @@ export function useKeyboardShortcuts() {
               })
             } else {
               (window as any).showSaveFilePicker({
+                id: 'dialog',
                 suggestedName: 'dialogues.json',
                 types: [{ description: 'Dialog JSON', accept: { 'application/json': ['.json'] } }],
               }).then(async (handle: FileSystemFileHandle) => {
@@ -105,6 +107,7 @@ export function useKeyboardShortcuts() {
               })
             } else {
               (window as any).showSaveFilePicker({
+                id: 'cutscene',
                 suggestedName: 'cutscenes.json',
                 types: [{ description: 'Cutscene JSON', accept: { 'application/json': ['.json'] } }],
               }).then(async (handle: FileSystemFileHandle) => {
@@ -130,6 +133,7 @@ export function useKeyboardShortcuts() {
             })
           } else {
             (window as any).showSaveFilePicker({
+              id: 'map',
               suggestedName: 'map.terrain',
               types: [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }],
             }).then(async (handle: FileSystemFileHandle) => {
@@ -292,6 +296,7 @@ async function saveAllFiles() {
     } else {
       try {
         const handle = await (window as any).showSaveFilePicker({
+          id: 'map',
           suggestedName: 'map.terrain',
           types: [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }],
         })
@@ -314,6 +319,7 @@ async function saveAllFiles() {
     } else {
       try {
         const handle = await (window as any).showSaveFilePicker({
+          id: 'map',
           suggestedName: 'map.entities',
           types: [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }],
         })
@@ -337,6 +343,7 @@ async function saveAllFiles() {
     } else {
       try {
         const handle = await (window as any).showSaveFilePicker({
+          id: 'registry',
           suggestedName: 'tiles.tileregistry',
           types: [{ description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } }],
         })

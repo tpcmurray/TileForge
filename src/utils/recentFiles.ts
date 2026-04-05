@@ -5,7 +5,7 @@
 
 export interface RecentEntry {
   name: string
-  kind: 'map' | 'registry'
+  kind: 'map' | 'registry' | 'sprite' | 'dialog' | 'cutscene'
   handle: FileSystemFileHandle
   timestamp: number
 }
@@ -49,7 +49,7 @@ export async function getRecentFiles(): Promise<RecentEntry[]> {
   }
 }
 
-export async function addRecentFile(name: string, kind: 'map' | 'registry', handle: FileSystemFileHandle): Promise<void> {
+export async function addRecentFile(name: string, kind: RecentEntry['kind'], handle: FileSystemFileHandle): Promise<void> {
   try {
     const db = await openDB()
 

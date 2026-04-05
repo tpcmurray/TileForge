@@ -53,7 +53,7 @@ export function MenuBar() {
 
   const store = useStore
 
-  const recordRecent = (name: string, kind: 'map' | 'registry', handle: FileSystemFileHandle) => {
+  const recordRecent = (name: string, kind: RecentEntry['kind'], handle: FileSystemFileHandle) => {
     addRecentFile(name, kind, handle).then(refreshRecent)
   }
 
@@ -226,7 +226,7 @@ function buildFileItems(
   mode: EditorMode,
   setOpenMenu: (m: string | null) => void,
   store: typeof useStore,
-  recordRecent: (name: string, kind: 'map' | 'registry', handle: FileSystemFileHandle) => void,
+  recordRecent: (name: string, kind: RecentEntry['kind'], handle: FileSystemFileHandle) => void,
   recentFiles: RecentEntry[],
   refreshRecent: () => void,
 ): MenuItem[] {
@@ -254,6 +254,7 @@ function buildFileItems(
         action: async () => {
           setOpenMenu(null)
           const [handle] = await (window as any).showOpenFilePicker({
+            id: 'map',
             types: [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }],
           }).catch(() => [null])
           if (!handle) return
@@ -269,6 +270,7 @@ function buildFileItems(
           }
           try {
             const [eHandle] = await (window as any).showOpenFilePicker({
+              id: 'map',
               types: [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }],
             })
             if (eHandle) {
@@ -293,7 +295,7 @@ function buildFileItems(
             await writeToHandle(mapFileHandle, text)
             recordRecent((await mapFileHandle.getFile()).name, 'map', mapFileHandle)
           } else {
-            const handle = await saveWithPicker(text, 'map.terrain', [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }])
+            const handle = await saveWithPicker(text, 'map.terrain', [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }], 'map')
             if (!handle) return
             store.getState().setMapFileHandle(handle)
             recordRecent((await handle.getFile()).name, 'map', handle)
@@ -308,7 +310,7 @@ function buildFileItems(
           const { cells } = store.getState()
           if (cells.length === 0) return
           const text = serializeTerrain(cells)
-          const handle = await saveWithPicker(text, 'map.terrain', [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }])
+          const handle = await saveWithPicker(text, 'map.terrain', [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }], 'map')
           if (!handle) return
           store.getState().setMapFileHandle(handle)
           recordRecent((await handle.getFile()).name, 'map', handle)
@@ -321,6 +323,7 @@ function buildFileItems(
         action: async () => {
           setOpenMenu(null)
           const [handle] = await (window as any).showOpenFilePicker({
+            id: 'registry',
             types: [{ description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } }],
           }).catch(() => [null])
           if (!handle) return
@@ -346,7 +349,7 @@ function buildFileItems(
             await writeToHandle(registryFileHandle, json)
             recordRecent((await registryFileHandle.getFile()).name, 'registry', registryFileHandle)
           } else {
-            const handle = await saveWithPicker(json, 'tiles.tileregistry', [{ description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } }])
+            const handle = await saveWithPicker(json, 'tiles.tileregistry', [{ description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } }], 'registry')
             if (!handle) return
             store.getState().setRegistryFileHandle(handle)
             recordRecent((await handle.getFile()).name, 'registry', handle)
@@ -361,7 +364,7 @@ function buildFileItems(
           const tiles = [...store.getState().tiles.values()]
           if (tiles.length === 0) return
           const json = serializeRegistry(tiles)
-          const handle = await saveWithPicker(json, 'tiles.tileregistry', [{ description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } }])
+          const handle = await saveWithPicker(json, 'tiles.tileregistry', [{ description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } }], 'registry')
           if (!handle) return
           store.getState().setRegistryFileHandle(handle)
           recordRecent((await handle.getFile()).name, 'registry', handle)
@@ -373,6 +376,7 @@ function buildFileItems(
         action: async () => {
           setOpenMenu(null)
           const [handle] = await (window as any).showOpenFilePicker({
+            id: 'registry',
             types: [{ description: 'C# Source', accept: { 'text/plain': ['.cs'] } }],
           }).catch(() => [null])
           if (!handle) return
@@ -391,6 +395,7 @@ function buildFileItems(
         action: async () => {
           setOpenMenu(null)
           const [handle] = await (window as any).showOpenFilePicker({
+            id: 'map',
             types: [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }],
           }).catch(() => [null])
           if (!handle) return
@@ -412,7 +417,7 @@ function buildFileItems(
           if (entitiesFileHandle) {
             await writeToHandle(entitiesFileHandle, text)
           } else {
-            const handle = await saveWithPicker(text, 'map.entities', [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }])
+            const handle = await saveWithPicker(text, 'map.entities', [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }], 'map')
             if (!handle) return
             store.getState().setEntitiesFileHandle(handle)
           }
@@ -426,7 +431,7 @@ function buildFileItems(
           const { entities, entityComments, entityUnknownLines } = store.getState()
           if (entities.length === 0 && entityComments.length === 0) return
           const text = serializeEntities(entities, entityComments, entityUnknownLines)
-          const handle = await saveWithPicker(text, 'map.entities', [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }])
+          const handle = await saveWithPicker(text, 'map.entities', [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }], 'map')
           if (!handle) return
           store.getState().setEntitiesFileHandle(handle)
           store.setState({ entitiesDirty: false })
@@ -501,6 +506,7 @@ function buildFileItems(
           setOpenMenu(null)
           try {
             const [handle] = await (window as any).showOpenFilePicker({
+              id: 'sprite',
               types: [{ description: 'Sprite JSON', accept: { 'application/json': ['.json'] } }],
             })
             if (!handle) return
@@ -509,6 +515,7 @@ function buildFileItems(
             const sprites = parseSpriteFile(text)
             store.getState().loadSprites(sprites)
             store.getState().setSpriteFileHandle(handle)
+            recordRecent(file.name, 'sprite', handle)
           } catch { /* cancelled */ }
         },
       },
@@ -521,10 +528,12 @@ function buildFileItems(
           const text = serializeSpriteFile(sprites)
           if (spriteFileHandle) {
             await writeToHandle(spriteFileHandle, text)
+            recordRecent((await spriteFileHandle.getFile()).name, 'sprite', spriteFileHandle)
           } else {
-            const handle = await saveWithPicker(text, 'sprites.json', [{ description: 'Sprite JSON', accept: { 'application/json': ['.json'] } }])
+            const handle = await saveWithPicker(text, 'sprites.json', [{ description: 'Sprite JSON', accept: { 'application/json': ['.json'] } }], 'sprite')
             if (!handle) return
             store.getState().setSpriteFileHandle(handle)
+            recordRecent((await handle.getFile()).name, 'sprite', handle)
           }
           store.setState({ spritesDirty: false })
         },
@@ -536,13 +545,44 @@ function buildFileItems(
           const { sprites } = store.getState()
           if (sprites.length === 0) return
           const text = serializeSpriteFile(sprites)
-          const handle = await saveWithPicker(text, 'sprites.json', [{ description: 'Sprite JSON', accept: { 'application/json': ['.json'] } }])
+          const handle = await saveWithPicker(text, 'sprites.json', [{ description: 'Sprite JSON', accept: { 'application/json': ['.json'] } }], 'sprite')
           if (!handle) return
           store.getState().setSpriteFileHandle(handle)
+          recordRecent((await handle.getFile()).name, 'sprite', handle)
           store.setState({ spritesDirty: false })
         },
       },
     )
+
+    // Recent sprite files
+    const recentSprites = recentFiles.filter((e) => e.kind === 'sprite')
+    if (recentSprites.length > 0) {
+      items.push({ label: '—', action: () => {} })
+      items.push({ label: 'Recent Sprite Files', action: () => {}, dim: true })
+      for (const entry of recentSprites) {
+        items.push({
+          label: `  ${entry.name}`,
+          action: async () => {
+            setOpenMenu(null)
+            try {
+              const perm = await (entry.handle as any).requestPermission({ mode: 'readwrite' })
+              if (perm !== 'granted') return
+              const file = await entry.handle.getFile()
+              const text = await file.text()
+              const sprites = parseSpriteFile(text)
+              store.getState().loadSprites(sprites)
+              store.getState().setSpriteFileHandle(entry.handle)
+              recordRecent(file.name, 'sprite', entry.handle)
+            } catch { alert(`Could not open ${entry.name}.`) }
+          },
+        })
+      }
+      items.push({ label: '—', action: () => {} })
+      items.push({
+        label: 'Clear Recent Files',
+        action: () => { clearRecentFiles().then(refreshRecent); setOpenMenu(null) },
+      })
+    }
   }
 
   if (mode === 'dialogs') {
@@ -553,6 +593,7 @@ function buildFileItems(
           setOpenMenu(null)
           try {
             const [handle] = await (window as any).showOpenFilePicker({
+              id: 'dialog',
               types: [{ description: 'Dialog JSON', accept: { 'application/json': ['.json'] } }],
             })
             if (!handle) return
@@ -561,6 +602,7 @@ function buildFileItems(
             const trees = parseDialogFile(text)
             store.getState().loadDialogs(trees)
             store.getState().setDialogFileHandle(handle)
+            recordRecent(file.name, 'dialog', handle)
           } catch { /* cancelled */ }
         },
       },
@@ -573,10 +615,12 @@ function buildFileItems(
           const text = serializeDialogFile(dialogTrees)
           if (dialogFileHandle) {
             await writeToHandle(dialogFileHandle, text)
+            recordRecent((await dialogFileHandle.getFile()).name, 'dialog', dialogFileHandle)
           } else {
-            const handle = await saveWithPicker(text, 'dialogues.json', [{ description: 'Dialog JSON', accept: { 'application/json': ['.json'] } }])
+            const handle = await saveWithPicker(text, 'dialogues.json', [{ description: 'Dialog JSON', accept: { 'application/json': ['.json'] } }], 'dialog')
             if (!handle) return
             store.getState().setDialogFileHandle(handle)
+            recordRecent((await handle.getFile()).name, 'dialog', handle)
           }
           store.setState({ dialogsDirty: false })
         },
@@ -588,13 +632,44 @@ function buildFileItems(
           const { dialogTrees } = store.getState()
           if (dialogTrees.length === 0) return
           const text = serializeDialogFile(dialogTrees)
-          const handle = await saveWithPicker(text, 'dialogues.json', [{ description: 'Dialog JSON', accept: { 'application/json': ['.json'] } }])
+          const handle = await saveWithPicker(text, 'dialogues.json', [{ description: 'Dialog JSON', accept: { 'application/json': ['.json'] } }], 'dialog')
           if (!handle) return
           store.getState().setDialogFileHandle(handle)
+          recordRecent((await handle.getFile()).name, 'dialog', handle)
           store.setState({ dialogsDirty: false })
         },
       },
     )
+
+    // Recent dialog files
+    const recentDialogs = recentFiles.filter((e) => e.kind === 'dialog')
+    if (recentDialogs.length > 0) {
+      items.push({ label: '—', action: () => {} })
+      items.push({ label: 'Recent Dialog Files', action: () => {}, dim: true })
+      for (const entry of recentDialogs) {
+        items.push({
+          label: `  ${entry.name}`,
+          action: async () => {
+            setOpenMenu(null)
+            try {
+              const perm = await (entry.handle as any).requestPermission({ mode: 'readwrite' })
+              if (perm !== 'granted') return
+              const file = await entry.handle.getFile()
+              const text = await file.text()
+              const trees = parseDialogFile(text)
+              store.getState().loadDialogs(trees)
+              store.getState().setDialogFileHandle(entry.handle)
+              recordRecent(file.name, 'dialog', entry.handle)
+            } catch { alert(`Could not open ${entry.name}.`) }
+          },
+        })
+      }
+      items.push({ label: '—', action: () => {} })
+      items.push({
+        label: 'Clear Recent Files',
+        action: () => { clearRecentFiles().then(refreshRecent); setOpenMenu(null) },
+      })
+    }
   }
 
   if (mode === 'cutscenes') {
@@ -605,6 +680,7 @@ function buildFileItems(
           setOpenMenu(null)
           try {
             const [handle] = await (window as any).showOpenFilePicker({
+              id: 'cutscene',
               types: [{ description: 'Cutscene JSON', accept: { 'application/json': ['.json'] } }],
             })
             if (!handle) return
@@ -613,6 +689,7 @@ function buildFileItems(
             const cutscenes = parseCutsceneFile(text)
             store.getState().loadCutscenes(cutscenes)
             store.getState().setCutsceneFileHandle(handle)
+            recordRecent(file.name, 'cutscene', handle)
           } catch { /* cancelled */ }
         },
       },
@@ -625,10 +702,12 @@ function buildFileItems(
           const text = serializeCutsceneFile(cutscenes)
           if (cutsceneFileHandle) {
             await writeToHandle(cutsceneFileHandle, text)
+            recordRecent((await cutsceneFileHandle.getFile()).name, 'cutscene', cutsceneFileHandle)
           } else {
-            const handle = await saveWithPicker(text, 'cutscenes.json', [{ description: 'Cutscene JSON', accept: { 'application/json': ['.json'] } }])
+            const handle = await saveWithPicker(text, 'cutscenes.json', [{ description: 'Cutscene JSON', accept: { 'application/json': ['.json'] } }], 'cutscene')
             if (!handle) return
             store.getState().setCutsceneFileHandle(handle)
+            recordRecent((await handle.getFile()).name, 'cutscene', handle)
           }
           store.setState({ cutscenesDirty: false })
         },
@@ -640,13 +719,44 @@ function buildFileItems(
           const { cutscenes } = store.getState()
           if (cutscenes.length === 0) return
           const text = serializeCutsceneFile(cutscenes)
-          const handle = await saveWithPicker(text, 'cutscenes.json', [{ description: 'Cutscene JSON', accept: { 'application/json': ['.json'] } }])
+          const handle = await saveWithPicker(text, 'cutscenes.json', [{ description: 'Cutscene JSON', accept: { 'application/json': ['.json'] } }], 'cutscene')
           if (!handle) return
           store.getState().setCutsceneFileHandle(handle)
+          recordRecent((await handle.getFile()).name, 'cutscene', handle)
           store.setState({ cutscenesDirty: false })
         },
       },
     )
+
+    // Recent cutscene files
+    const recentCutscenes = recentFiles.filter((e) => e.kind === 'cutscene')
+    if (recentCutscenes.length > 0) {
+      items.push({ label: '—', action: () => {} })
+      items.push({ label: 'Recent Cutscene Files', action: () => {}, dim: true })
+      for (const entry of recentCutscenes) {
+        items.push({
+          label: `  ${entry.name}`,
+          action: async () => {
+            setOpenMenu(null)
+            try {
+              const perm = await (entry.handle as any).requestPermission({ mode: 'readwrite' })
+              if (perm !== 'granted') return
+              const file = await entry.handle.getFile()
+              const text = await file.text()
+              const cutscenes = parseCutsceneFile(text)
+              store.getState().loadCutscenes(cutscenes)
+              store.getState().setCutsceneFileHandle(entry.handle)
+              recordRecent(file.name, 'cutscene', entry.handle)
+            } catch { alert(`Could not open ${entry.name}.`) }
+          },
+        })
+      }
+      items.push({ label: '—', action: () => {} })
+      items.push({
+        label: 'Clear Recent Files',
+        action: () => { clearRecentFiles().then(refreshRecent); setOpenMenu(null) },
+      })
+    }
   }
 
   // Save All — always available
@@ -706,7 +816,7 @@ async function saveAll() {
     if (s.mapFileHandle) {
       await writeToHandle(s.mapFileHandle, text)
     } else {
-      const handle = await saveWithPicker(text, 'map.terrain', [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }])
+      const handle = await saveWithPicker(text, 'map.terrain', [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }], 'map')
       if (handle) useStore.getState().setMapFileHandle(handle)
     }
     useStore.setState({ mapDirty: false })
@@ -717,7 +827,7 @@ async function saveAll() {
     if (s.entitiesFileHandle) {
       await writeToHandle(s.entitiesFileHandle, text)
     } else {
-      const handle = await saveWithPicker(text, 'map.entities', [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }])
+      const handle = await saveWithPicker(text, 'map.entities', [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }], 'map')
       if (handle) useStore.getState().setEntitiesFileHandle(handle)
     }
     useStore.setState({ entitiesDirty: false })
@@ -729,7 +839,7 @@ async function saveAll() {
     if (s.registryFileHandle) {
       await writeToHandle(s.registryFileHandle, json)
     } else {
-      const handle = await saveWithPicker(json, 'tiles.tileregistry', [{ description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } }])
+      const handle = await saveWithPicker(json, 'tiles.tileregistry', [{ description: 'Tile Registry', accept: { 'application/json': ['.tileregistry', '.json'] } }], 'registry')
       if (handle) useStore.getState().setRegistryFileHandle(handle)
     }
     useStore.setState({ registryDirty: false })
@@ -740,7 +850,7 @@ async function saveAll() {
     if (s.spriteFileHandle) {
       await writeToHandle(s.spriteFileHandle, text)
     } else {
-      const handle = await saveWithPicker(text, 'sprites.json', [{ description: 'Sprite JSON', accept: { 'application/json': ['.json'] } }])
+      const handle = await saveWithPicker(text, 'sprites.json', [{ description: 'Sprite JSON', accept: { 'application/json': ['.json'] } }], 'sprite')
       if (handle) useStore.getState().setSpriteFileHandle(handle)
     }
     useStore.setState({ spritesDirty: false })
@@ -751,7 +861,7 @@ async function saveAll() {
     if (s.dialogFileHandle) {
       await writeToHandle(s.dialogFileHandle, text)
     } else {
-      const handle = await saveWithPicker(text, 'dialogues.json', [{ description: 'Dialog JSON', accept: { 'application/json': ['.json'] } }])
+      const handle = await saveWithPicker(text, 'dialogues.json', [{ description: 'Dialog JSON', accept: { 'application/json': ['.json'] } }], 'dialog')
       if (handle) useStore.getState().setDialogFileHandle(handle)
     }
     useStore.setState({ dialogsDirty: false })
@@ -762,7 +872,7 @@ async function saveAll() {
     if (s.cutsceneFileHandle) {
       await writeToHandle(s.cutsceneFileHandle, text)
     } else {
-      const handle = await saveWithPicker(text, 'cutscenes.json', [{ description: 'Cutscene JSON', accept: { 'application/json': ['.json'] } }])
+      const handle = await saveWithPicker(text, 'cutscenes.json', [{ description: 'Cutscene JSON', accept: { 'application/json': ['.json'] } }], 'cutscene')
       if (handle) useStore.getState().setCutsceneFileHandle(handle)
     }
     useStore.setState({ cutscenesDirty: false })
@@ -779,9 +889,10 @@ async function saveWithPicker(
   content: string,
   suggestedName: string,
   types: { description: string; accept: Record<string, string[]> }[],
+  id?: string,
 ): Promise<FileSystemFileHandle | null> {
   try {
-    const handle = await (window as any).showSaveFilePicker({ suggestedName, types })
+    const handle = await (window as any).showSaveFilePicker({ suggestedName, types, ...(id && { id }) })
     await writeToHandle(handle, content)
     return handle
   } catch {
