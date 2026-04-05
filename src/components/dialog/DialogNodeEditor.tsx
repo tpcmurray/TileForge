@@ -282,19 +282,36 @@ function ChoiceRow({
         />
       </div>
       {/* Choice conditions */}
-      {choice.conditions && choice.conditions.length > 0 && (
-        <div className="mt-0.5 flex flex-wrap gap-1">
-          {choice.conditions.map((c, i) => (
-            <span
-              key={i}
-              className="px-1 py-0 text-[8px] font-mono rounded"
-              style={{ background: 'var(--bg-hover)', color: 'var(--text-dim)' }}
-            >
-              {c.type} {c.op ?? ''} {c.key ?? ''} {c.value ?? ''}
-            </span>
-          ))}
+      <div className="mt-0.5">
+        <div className="flex items-center justify-between">
+          <div className="text-[8px] font-mono uppercase" style={{ color: 'var(--text-dim)' }}>
+            Conditions ({choice.conditions?.length ?? 0})
+          </div>
+          <button
+            className="px-1 py-0 text-[9px] font-mono rounded cursor-pointer"
+            style={{ color: 'var(--accent)', border: '1px solid var(--border)' }}
+            onClick={() => onChange({ conditions: [...(choice.conditions ?? []), { type: 'flag' }] })}
+          >
+            +
+          </button>
         </div>
-      )}
+        {(choice.conditions ?? []).map((cond, ci) => (
+          <div key={ci} className="mt-0.5">
+            <ConditionRow
+              condition={cond}
+              onChange={(p) => {
+                const conditions = [...(choice.conditions ?? [])]
+                conditions[ci] = { ...conditions[ci], ...p }
+                onChange({ conditions })
+              }}
+              onRemove={() => {
+                const conditions = (choice.conditions ?? []).filter((_, j) => j !== ci)
+                onChange({ conditions: conditions.length > 0 ? conditions : undefined })
+              }}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -327,6 +344,7 @@ function EffectRow({
           <option value="set_flag">set_flag</option>
           <option value="give_ability">give_ability</option>
           <option value="give_item">give_item</option>
+          <option value="remove_item">remove_item</option>
         </select>
         <button
           className="px-1 py-0.5 text-[10px] font-mono rounded cursor-pointer ml-auto"

@@ -1,6 +1,6 @@
 import { useStore } from '../../store'
 import { DialogTreeList } from './DialogTreeList'
-import { DialogNodeList } from './DialogNodeList'
+import { DialogNodeGraph } from './DialogNodeGraph'
 import { DialogNodeEditor } from './DialogNodeEditor'
 
 export function DialogEditor() {
@@ -19,7 +19,7 @@ export function DialogEditor() {
   return (
     <div className="flex flex-1 min-h-0">
       <DialogTreeList />
-      <DialogNodeList />
+      <DialogNodeGraph />
       <DialogNodeEditor />
     </div>
   )
