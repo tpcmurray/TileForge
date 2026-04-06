@@ -1,8 +1,17 @@
 import type { RGBA } from '../types'
 
-/** Convert an RGBA object to a CSS rgba() string */
+/** Convert an RGBA object to a CSS rgba() string (cached) */
+const cssCache = new Map<number, string>()
+
 export function rgbaToCSS(c: RGBA): string {
-  return `rgba(${c.r},${c.g},${c.b},${c.a / 255})`
+  // Pack RGBA into a single 32-bit key
+  const key = (c.r << 24) | (c.g << 16) | (c.b << 8) | c.a
+  let s = cssCache.get(key)
+  if (s === undefined) {
+    s = `rgba(${c.r},${c.g},${c.b},${c.a / 255})`
+    cssCache.set(key, s)
+  }
+  return s
 }
 
 /** Checkerboard pattern size (in pixels) */

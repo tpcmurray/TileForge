@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback, useMemo } from 'react'
+import { useRef, useEffect, useCallback } from 'react'
 import { useStore } from '../store'
 
 const BASE_CELL_W = 16
@@ -17,79 +17,101 @@ export function Minimap({ containerWidth, containerHeight }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const draggingRef = useRef(false)
 
-  const cells = useStore((s) => s.cells)
-  const tiles = useStore((s) => s.tiles)
+  // Offscreen canvas caches the cell-color image (rebuilt only on cells/tiles change)
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null)
+  // Track which cells version the offscreen was built from
+  const offscreenCellsRef = useRef<string[][] | null>(null)
+  const offscreenTilesRef = useRef<Map<string, unknown> | null>(null)
+
   const mapWidth = useStore((s) => s.mapWidth)
   const mapHeight = useStore((s) => s.mapHeight)
-  const zoom = useStore((s) => s.zoom)
-  const panX = useStore((s) => s.panX)
-  const panY = useStore((s) => s.panY)
-  const setPan = useStore((s) => s.setPan)
 
-  // Compute scale factor to fit within max dimensions
-  const scale = useMemo(() => {
+  const scale = (() => {
     const rawW = mapWidth * MINI_CELL_W
     const rawH = mapHeight * MINI_CELL_H
     if (rawW <= MAX_W && rawH <= MAX_H) return 1
     return Math.min(MAX_W / rawW, MAX_H / rawH)
-  }, [mapWidth, mapHeight])
+  })()
 
   const miniW = Math.ceil(mapWidth * MINI_CELL_W * scale)
   const miniH = Math.ceil(mapHeight * MINI_CELL_H * scale)
-
   const cellW = MINI_CELL_W * scale
   const cellH = MINI_CELL_H * scale
 
-  // Cache cell colors — only recompute when cells or tiles change
-  const colorBuffer = useMemo(() => {
-    const buf = new Uint8Array(mapWidth * mapHeight * 3)
-    const fallback = [13, 15, 18] // --bg-darkest approx
+  // Build (or rebuild) the offscreen cell-color canvas via ImageData
+  const rebuildOffscreen = useCallback(() => {
+    if (mapWidth === 0 || mapHeight === 0) return
+
+    const s = useStore.getState()
+    offscreenCellsRef.current = s.cells
+    offscreenTilesRef.current = s.tiles
+
+    const pw = Math.ceil(mapWidth * cellW)
+    const ph = Math.ceil(mapHeight * cellH)
+
+    let oc = offscreenRef.current
+    if (!oc || oc.width !== pw || oc.height !== ph) {
+      oc = document.createElement('canvas')
+      oc.width = pw
+      oc.height = ph
+      offscreenRef.current = oc
+    }
+
+    const ctx = oc.getContext('2d')!
+    const imgData = ctx.createImageData(pw, ph)
+    const data = imgData.data
+    const fr = 13, fg = 15, fb = 18 // --bg-darkest fallback
+
     for (let r = 0; r < mapHeight; r++) {
+      const row = s.cells[r]
+      const py0 = Math.floor(r * cellH)
+      const py1 = Math.floor((r + 1) * cellH)
       for (let c = 0; c < mapWidth; c++) {
-        const code = cells[r]?.[c]
-        const tile = code ? tiles.get(code) : null
-        const idx = (r * mapWidth + c) * 3
+        const code = row?.[c]
+        const tile = code ? s.tiles.get(code) : null
+        let cr: number, cg: number, cb: number
         if (tile && tile.bg.a > 0) {
-          buf[idx] = tile.bg.r
-          buf[idx + 1] = tile.bg.g
-          buf[idx + 2] = tile.bg.b
+          cr = tile.bg.r; cg = tile.bg.g; cb = tile.bg.b
         } else {
-          buf[idx] = fallback[0]
-          buf[idx + 1] = fallback[1]
-          buf[idx + 2] = fallback[2]
+          cr = fr; cg = fg; cb = fb
+        }
+        const px0 = Math.floor(c * cellW)
+        const px1 = Math.floor((c + 1) * cellW)
+        for (let py = py0; py < py1; py++) {
+          const rowOff = py * pw
+          for (let px = px0; px < px1; px++) {
+            const i = (rowOff + px) << 2
+            data[i] = cr
+            data[i + 1] = cg
+            data[i + 2] = cb
+            data[i + 3] = 255
+          }
         }
       }
     }
-    return buf
-  }, [cells, tiles, mapWidth, mapHeight])
 
-  // Render minimap
-  useEffect(() => {
+    ctx.putImageData(imgData, 0, 0)
+  }, [mapWidth, mapHeight, cellW, cellH])
+
+  // Composite: draw cached offscreen + viewport rect onto visible canvas
+  const drawFrame = useCallback(() => {
     const canvas = canvasRef.current
-    if (!canvas || miniW === 0 || miniH === 0) return
+    const oc = offscreenRef.current
+    if (!canvas || !oc || miniW === 0 || miniH === 0) return
 
-    const dpr = window.devicePixelRatio || 1
-    canvas.width = miniW * dpr
-    canvas.height = miniH * dpr
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    ctx.scale(dpr, dpr)
-
-    // Draw cell colors
-    for (let r = 0; r < mapHeight; r++) {
-      for (let c = 0; c < mapWidth; c++) {
-        const idx = (r * mapWidth + c) * 3
-        ctx.fillStyle = `rgb(${colorBuffer[idx]},${colorBuffer[idx + 1]},${colorBuffer[idx + 2]})`
-        ctx.fillRect(c * cellW, r * cellH, Math.ceil(cellW), Math.ceil(cellH))
-      }
-    }
+    // Blit cached cell image
+    ctx.clearRect(0, 0, miniW, miniH)
+    ctx.drawImage(oc, 0, 0, miniW, miniH)
 
     // Draw viewport rectangle
-    const realCellW = BASE_CELL_W * zoom
-    const realCellH = BASE_CELL_H * zoom
-    const vx = (-panX / realCellW) * cellW
-    const vy = (-panY / realCellH) * cellH
+    const s = useStore.getState()
+    const realCellW = BASE_CELL_W * s.zoom
+    const realCellH = BASE_CELL_H * s.zoom
+    const vx = (-s.panX / realCellW) * cellW
+    const vy = (-s.panY / realCellH) * cellH
     const vw = (containerWidth / realCellW) * cellW
     const vh = (containerHeight / realCellH) * cellH
 
@@ -101,7 +123,41 @@ export function Minimap({ containerWidth, containerHeight }: Props) {
       Math.min(vw, miniW - Math.max(0, vx)),
       Math.min(vh, miniH - Math.max(0, vy)),
     )
-  }, [colorBuffer, miniW, miniH, cellW, cellH, mapWidth, mapHeight, zoom, panX, panY, containerWidth, containerHeight])
+  }, [miniW, miniH, cellW, cellH, containerWidth, containerHeight])
+
+  // Subscribe to store — rebuild offscreen only when cells/tiles change, always redraw frame
+  useEffect(() => {
+    if (mapWidth === 0 || mapHeight === 0) return
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+    canvas.width = miniW
+    canvas.height = miniH
+
+    // Initial build
+    rebuildOffscreen()
+    drawFrame()
+
+    let pending = false
+    const schedule = () => {
+      if (pending) return
+      pending = true
+      requestAnimationFrame(() => {
+        pending = false
+
+        // Check if cells or tiles changed since last offscreen build
+        const s = useStore.getState()
+        if (s.cells !== offscreenCellsRef.current || s.tiles !== offscreenTilesRef.current) {
+          rebuildOffscreen()
+        }
+
+        drawFrame()
+      })
+    }
+
+    const unsub = useStore.subscribe(schedule)
+    return () => unsub()
+  }, [mapWidth, mapHeight, miniW, miniH, rebuildOffscreen, drawFrame])
 
   const panToMinimapPoint = useCallback(
     (e: React.MouseEvent) => {
@@ -111,19 +167,18 @@ export function Minimap({ containerWidth, containerHeight }: Props) {
       const mx = e.clientX - rect.left
       const my = e.clientY - rect.top
 
-      // Map pixel to cell
       const col = mx / cellW
       const row = my / cellH
 
-      // Center that cell in the main view
-      const realCellW = BASE_CELL_W * zoom
-      const realCellH = BASE_CELL_H * zoom
-      setPan(
+      const s = useStore.getState()
+      const realCellW = BASE_CELL_W * s.zoom
+      const realCellH = BASE_CELL_H * s.zoom
+      s.setPan(
         -col * realCellW + containerWidth / 2,
         -row * realCellH + containerHeight / 2,
       )
     },
-    [cellW, cellH, zoom, containerWidth, containerHeight, setPan],
+    [cellW, cellH, containerWidth, containerHeight],
   )
 
   const handleMouseDown = useCallback(
@@ -150,7 +205,6 @@ export function Minimap({ containerWidth, containerHeight }: Props) {
     draggingRef.current = false
   }, [])
 
-  // Release drag if mouse leaves minimap
   useEffect(() => {
     const up = () => { draggingRef.current = false }
     window.addEventListener('mouseup', up)

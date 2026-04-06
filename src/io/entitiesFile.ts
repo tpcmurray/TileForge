@@ -421,22 +421,18 @@ export function serializeEntities(
 ): string {
   const parts: string[] = []
 
-  // Comments first
-  if (comments.length > 0) {
-    parts.push(...comments)
-    // Add blank line separator if comments don't end with one
-    if (comments[comments.length - 1].trim() !== '') parts.push('')
+  // Comments first — skip blank lines
+  for (const line of comments) {
+    if (line.trim() !== '') parts.push(line)
   }
 
-  // Group entities by type for readability
+  // Group entities by type
   const typeOrder: Entity['type'][] = ['ZONE', 'MUSIC', 'SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
   for (const type of typeOrder) {
     const group = entities.filter((e) => e.type === type)
-    if (group.length === 0) continue
     for (const e of group) {
       parts.push(serializeEntity(e))
     }
-    parts.push('')
   }
 
   // Unknown lines preserved at end

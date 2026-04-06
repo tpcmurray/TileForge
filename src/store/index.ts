@@ -289,9 +289,11 @@ export const useStore = create<TileForgeState>((set, get) => ({
   setCell: (x, y, code) =>
     set((s) => {
       if (y < 0 || y >= s.mapHeight || x < 0 || x >= s.mapWidth) return s
-      const cells = s.cells.map((row, ry) =>
-        ry === y ? row.map((c, cx) => (cx === x ? code : c)) : row
-      )
+      if (s.cells[y][x] === code) return s
+      const row = [...s.cells[y]]
+      row[x] = code
+      const cells = [...s.cells]
+      cells[y] = row
       return { cells, mapDirty: true }
     }),
 
