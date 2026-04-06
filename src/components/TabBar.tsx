@@ -7,6 +7,7 @@ export function TabBar() {
   const mapDirty = useStore((s) => s.mapDirty)
   const entitiesDirty = useStore((s) => s.entitiesDirty)
   const mapTabs = useStore((s) => s.mapTabs)
+  const tabOrder = useStore((s) => s.tabOrder)
   const switchMapTab = useStore((s) => s.switchMapTab)
   const closeMapTab = useStore((s) => s.closeMapTab)
   const newMapTab = useStore((s) => s.newMapTab)
@@ -14,31 +15,16 @@ export function TabBar() {
   // Only show in map mode when at least one tab exists
   if (editorMode !== 'map' || !activeMapTabId) return null
 
-  // Build tab list: background tabs + active tab, in order
-  // We want the active tab in the position it was originally
-  // Background tabs are stored in order they were pushed; active is current
-  const allTabs: { id: string; label: string; dirty: boolean; active: boolean }[] = []
-
-  // Reconstruct: background tabs come first (in their stored order), active tab at its position
-  // For simplicity, show background tabs in stored order, then active at end
-  // Actually, let's insert the active tab based on when it was created (no easy way to track position)
-  // Simplest UX: show tabs in the order they appear in mapTabs, with active inserted at end
-  // This means newly opened tabs go to the right — a standard pattern
-
-  for (const tab of mapTabs) {
-    allTabs.push({
-      id: tab.id,
-      label: tab.label,
-      dirty: tab.mapDirty || tab.entitiesDirty,
-      active: false,
-    })
-  }
-  allTabs.push({
-    id: activeMapTabId,
-    label: activeMapTabLabel || 'Untitled',
-    dirty: mapDirty || entitiesDirty,
-    active: true,
-  })
+  // Build tab list in stable tabOrder
+  const bgMap = new Map(mapTabs.map((t) => [t.id, t]))
+  const allTabs = tabOrder.map((id) => {
+    if (id === activeMapTabId) {
+      return { id, label: activeMapTabLabel || 'Untitled', dirty: mapDirty || entitiesDirty, active: true }
+    }
+    const tab = bgMap.get(id)
+    if (!tab) return null
+    return { id, label: tab.label, dirty: tab.mapDirty || tab.entitiesDirty, active: false }
+  }).filter((t): t is NonNullable<typeof t> => t !== null)
 
   const handleClose = (e: React.MouseEvent, tabId: string, dirty: boolean) => {
     e.stopPropagation()

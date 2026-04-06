@@ -12,6 +12,9 @@ import type {
   SignEntity,
   TriggerEntity,
   LabelEntity,
+  WeatherEntity,
+  ZoneEntity,
+  MusicEntity,
 } from '../types'
 
 interface Props {
@@ -20,7 +23,7 @@ interface Props {
   onClose: () => void
 }
 
-const ENTITY_TYPES: EntityType[] = ['SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL']
+const ENTITY_TYPES: EntityType[] = ['ZONE', 'MUSIC', 'SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
 
 function makeDefault(type: EntityType, x: number, y: number): Entity {
   const base = { id: crypto.randomUUID(), x, y }
@@ -39,6 +42,12 @@ function makeDefault(type: EntityType, x: number, y: number): Entity {
       return { ...base, type: 'TRIGGER', w: 1, h: 1, cutsceneId: '', flag: null, absent: null }
     case 'LABEL':
       return { ...base, type: 'LABEL', fg: 'White', bg: 'Transparent', text: '' }
+    case 'WEATHER':
+      return { ...base, type: 'WEATHER', x: 0, y: 0, weatherType: 'rain', intensity: 0.2, runMin: 60, runMax: 120, pauseMin: 300, pauseMax: 360 }
+    case 'ZONE':
+      return { ...base, type: 'ZONE', x: 0, y: 0, zoneName: '', town: false, fog: 0 }
+    case 'MUSIC':
+      return { ...base, type: 'MUSIC', x: 0, y: 0, trackId: '', volume: 0.5 }
   }
 }
 
@@ -124,17 +133,19 @@ export function EntityEditDialog({ entity, defaultPos, onClose }: Props) {
           </select>
         </div>
 
-        {/* Position */}
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          <div>
-            <Label>X</Label>
-            <NumInput value={data.x} onChange={(v) => update({ x: v })} step={1} />
+        {/* Position (hidden for WEATHER — it's map-level) */}
+        {data.type !== 'WEATHER' && data.type !== 'ZONE' && data.type !== 'MUSIC' && (
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div>
+              <Label>X</Label>
+              <NumInput value={data.x} onChange={(v) => update({ x: v })} step={1} />
+            </div>
+            <div>
+              <Label>Y</Label>
+              <NumInput value={data.y} onChange={(v) => update({ y: v })} step={1} />
+            </div>
           </div>
-          <div>
-            <Label>Y</Label>
-            <NumInput value={data.y} onChange={(v) => update({ y: v })} step={1} />
-          </div>
-        </div>
+        )}
 
         {/* Type-specific fields */}
         {data.type === 'DOOR' && <DoorFields data={data} update={update} />}
@@ -144,6 +155,9 @@ export function EntityEditDialog({ entity, defaultPos, onClose }: Props) {
         {data.type === 'SIGN' && <SignFields data={data} update={update} />}
         {data.type === 'TRIGGER' && <TriggerFields data={data} update={update} />}
         {data.type === 'LABEL' && <LabelFields data={data} update={update} />}
+        {data.type === 'WEATHER' && <WeatherFields data={data} update={update} />}
+        {data.type === 'ZONE' && <ZoneFields data={data} update={update} />}
+        {data.type === 'MUSIC' && <MusicFields data={data} update={update} />}
 
         {/* Actions */}
         <div className="flex items-center gap-2 mt-4">
@@ -439,6 +453,71 @@ function LabelFields({ data, update }: { data: LabelEntity; update: (p: Partial<
           showTransparent
         />
       )}
+    </>
+  )
+}
+
+function ZoneFields({ data, update }: { data: ZoneEntity; update: (p: Partial<ZoneEntity>) => void }) {
+  return (
+    <>
+      <div className="mb-3">
+        <Label>Zone Name</Label>
+        <TextInput value={data.zoneName} onChange={(v) => update({ zoneName: v })} />
+      </div>
+      <div className="mb-3">
+        <Label>Town</Label>
+        <select
+          value={data.town ? 'true' : 'false'}
+          onChange={(e) => update({ town: e.target.value === 'true' })}
+          className="w-full font-mono text-xs rounded px-2 py-1.5 outline-none cursor-pointer"
+          style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          <option value="false">false</option>
+          <option value="true">true</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <Label>Fog</Label>
+        <NumInput value={data.fog} onChange={(v) => update({ fog: v })} step={0.01} min={0} />
+      </div>
+    </>
+  )
+}
+
+function MusicFields({ data, update }: { data: MusicEntity; update: (p: Partial<MusicEntity>) => void }) {
+  return (
+    <>
+      <div className="mb-3">
+        <Label>Track ID</Label>
+        <TextInput value={data.trackId} onChange={(v) => update({ trackId: v })} />
+      </div>
+      <div className="mb-3">
+        <Label>Volume</Label>
+        <NumInput value={data.volume} onChange={(v) => update({ volume: v })} step={0.01} min={0} />
+      </div>
+    </>
+  )
+}
+
+function WeatherFields({ data, update }: { data: WeatherEntity; update: (p: Partial<WeatherEntity>) => void }) {
+  return (
+    <>
+      <div className="mb-3">
+        <Label>Weather Type</Label>
+        <TextInput value={data.weatherType} onChange={(v) => update({ weatherType: v })} />
+      </div>
+      <div className="mb-3">
+        <Label>Intensity</Label>
+        <NumInput value={data.intensity} onChange={(v) => update({ intensity: v })} step={0.01} min={0} />
+      </div>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div><Label>Run Min (sec)</Label><NumInput value={data.runMin} onChange={(v) => update({ runMin: v })} min={0} step={1} /></div>
+        <div><Label>Run Max (sec)</Label><NumInput value={data.runMax} onChange={(v) => update({ runMax: v })} min={0} step={1} /></div>
+      </div>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div><Label>Pause Min (sec)</Label><NumInput value={data.pauseMin} onChange={(v) => update({ pauseMin: v })} min={0} step={1} /></div>
+        <div><Label>Pause Max (sec)</Label><NumInput value={data.pauseMax} onChange={(v) => update({ pauseMax: v })} min={0} step={1} /></div>
+      </div>
     </>
   )
 }

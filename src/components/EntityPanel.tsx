@@ -11,6 +11,9 @@ const TYPE_COLORS: Record<EntityType, string> = {
   SIGN: '#96ff96',
   TRIGGER: '#ffa03c',
   LABEL: '#e0e0e0',
+  WEATHER: '#64b5f6',
+  ZONE: '#b0bec5',
+  MUSIC: '#ce93d8',
 }
 
 const TYPE_LABELS: Record<EntityType, string> = {
@@ -21,6 +24,9 @@ const TYPE_LABELS: Record<EntityType, string> = {
   SIGN: '!',
   TRIGGER: 'T',
   LABEL: 'L',
+  WEATHER: 'W',
+  ZONE: 'Z',
+  MUSIC: 'M',
 }
 
 function entitySummary(e: Entity): string {
@@ -32,6 +38,9 @@ function entitySummary(e: Entity): string {
     case 'SIGN': return e.message.length > 20 ? e.message.slice(0, 20) + '…' : e.message
     case 'TRIGGER': return e.cutsceneId
     case 'LABEL': return e.text.length > 20 ? e.text.slice(0, 20) + '…' : e.text
+    case 'WEATHER': return `${e.weatherType} ${e.intensity}`
+    case 'ZONE': return `${e.zoneName}${e.town ? ' (town)' : ''}`
+    case 'MUSIC': return `${e.trackId} vol:${e.volume}`
   }
 }
 
@@ -55,7 +64,7 @@ export function EntityPanel() {
   }
 
   // Group by type
-  const typeOrder: EntityType[] = ['SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL']
+  const typeOrder: EntityType[] = ['ZONE', 'MUSIC', 'SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
   const grouped = typeOrder
     .map((type) => ({
       type,
@@ -116,9 +125,11 @@ export function EntityPanel() {
                 onClick={() => handleClick(e)}
                 onDoubleClick={() => setEditingEntity(e)}
               >
-                <span style={{ color: 'var(--text-dim)', fontSize: 9 }}>
-                  {Math.round(e.x)},{Math.round(e.y)}
-                </span>
+                {e.type !== 'WEATHER' && e.type !== 'ZONE' && e.type !== 'MUSIC' && (
+                  <span style={{ color: 'var(--text-dim)', fontSize: 9 }}>
+                    {Math.round(e.x)},{Math.round(e.y)}
+                  </span>
+                )}
                 <span className="truncate flex-1">{entitySummary(e)}</span>
               </div>
             )

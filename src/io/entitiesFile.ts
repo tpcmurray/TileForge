@@ -1,4 +1,4 @@
-import type { Entity, DoorEntity, SpawnEntity, NpcEntity, ChestEntity, SignEntity, TriggerEntity, LabelEntity } from '../types'
+import type { Entity, DoorEntity, SpawnEntity, NpcEntity, ChestEntity, SignEntity, TriggerEntity, LabelEntity, WeatherEntity, ZoneEntity, MusicEntity } from '../types'
 
 export interface EntitiesParseResult {
   entities: Entity[]
@@ -237,6 +237,79 @@ function parseLabel(tokens: string[], line: string, lineNum: number): { entity: 
   }
 }
 
+function parseZone(tokens: string[], lineNum: number): { entity: ZoneEntity; error?: string } | { entity?: never; error: string } {
+  // ZONE name:Bramble Path town:false fog:0.85
+  // name/town/fog are key:value pairs, but name can contain spaces so we parse carefully
+  let zoneName = ''
+  let town = false
+  let fog = 0
+
+  const rest = tokens.slice(1).join(' ')
+  const nameMatch = rest.match(/name:([^ ]+(?:\s+(?!town:|fog:)[^ ]+)*)/)
+  if (nameMatch) zoneName = nameMatch[1]
+  else return { error: `Line ${lineNum}: ZONE missing name:` }
+
+  const townMatch = rest.match(/town:(\w+)/)
+  if (townMatch) town = townMatch[1] === 'true'
+
+  const fogMatch = rest.match(/fog:([\d.]+)/)
+  if (fogMatch) fog = parseFloat(fogMatch[1])
+
+  return {
+    entity: {
+      id: crypto.randomUUID(),
+      type: 'ZONE',
+      x: 0, y: 0,
+      zoneName, town, fog,
+    },
+  }
+}
+
+function parseMusic(tokens: string[], lineNum: number): { entity: MusicEntity; error?: string } | { entity?: never; error: string } {
+  // MUSIC track_id volume
+  if (tokens.length < 3) return { error: `Line ${lineNum}: MUSIC requires track_id and volume` }
+
+  const volume = parseFloat(tokens[2])
+  if (isNaN(volume)) return { error: `Line ${lineNum}: MUSIC invalid volume "${tokens[2]}"` }
+
+  return {
+    entity: {
+      id: crypto.randomUUID(),
+      type: 'MUSIC',
+      x: 0, y: 0,
+      trackId: tokens[1],
+      volume,
+    },
+  }
+}
+
+function parseWeather(tokens: string[], lineNum: number): { entity: WeatherEntity; error?: string } | { entity?: never; error: string } {
+  // WEATHER type intensity run_min run_max pause_min pause_max
+  if (tokens.length < 7) return { error: `Line ${lineNum}: WEATHER requires 6 arguments (type intensity run_min run_max pause_min pause_max)` }
+
+  const intensity = parseFloat(tokens[2])
+  const runMin = parseFloat(tokens[3])
+  const runMax = parseFloat(tokens[4])
+  const pauseMin = parseFloat(tokens[5])
+  const pauseMax = parseFloat(tokens[6])
+
+  if ([intensity, runMin, runMax, pauseMin, pauseMax].some(isNaN)) {
+    return { error: `Line ${lineNum}: WEATHER has invalid numeric values` }
+  }
+
+  return {
+    entity: {
+      id: crypto.randomUUID(),
+      type: 'WEATHER',
+      x: 0, y: 0,
+      weatherType: tokens[1],
+      intensity,
+      runMin, runMax,
+      pauseMin, pauseMax,
+    },
+  }
+}
+
 export function parseEntities(text: string): EntitiesParseResult {
   const lines = text.split(/\r?\n/)
   const entities: Entity[] = []
@@ -278,6 +351,15 @@ export function parseEntities(text: string): EntitiesParseResult {
       case 'LABEL':
         result = parseLabel(tokens, line, i + 1)
         break
+      case 'WEATHER':
+        result = parseWeather(tokens, i + 1)
+        break
+      case 'ZONE':
+        result = parseZone(tokens, i + 1)
+        break
+      case 'MUSIC':
+        result = parseMusic(tokens, i + 1)
+        break
       default:
         unknownLines.push(lines[i])
         continue
@@ -318,6 +400,17 @@ function serializeEntity(e: Entity): string {
     }
     case 'LABEL':
       return `LABEL ${e.x},${e.y} ${e.fg} ${e.bg} ${e.text}`
+    case 'WEATHER':
+      return `WEATHER ${e.weatherType} ${e.intensity} ${e.runMin} ${e.runMax} ${e.pauseMin} ${e.pauseMax}`
+    case 'ZONE': {
+      let line = `ZONE name:${e.zoneName}`
+      if (e.town) line += ` town:true`
+      else line += ` town:false`
+      if (e.fog) line += ` fog:${e.fog}`
+      return line
+    }
+    case 'MUSIC':
+      return `MUSIC ${e.trackId} ${e.volume}`
   }
 }
 
@@ -336,7 +429,7 @@ export function serializeEntities(
   }
 
   // Group entities by type for readability
-  const typeOrder: Entity['type'][] = ['SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL']
+  const typeOrder: Entity['type'][] = ['ZONE', 'MUSIC', 'SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
   for (const type of typeOrder) {
     const group = entities.filter((e) => e.type === type)
     if (group.length === 0) continue

@@ -187,12 +187,11 @@ export function useKeyboardShortcuts() {
       if (ctrl && e.key === 'Tab') {
         e.preventDefault()
         const s = useStore.getState()
-        if (s.editorMode === 'map' && s.mapTabs.length > 0) {
-          const allIds = [...s.mapTabs.map((t) => t.id), s.activeMapTabId!]
-          const idx = allIds.indexOf(s.activeMapTabId!)
+        if (s.editorMode === 'map' && s.tabOrder.length > 1) {
+          const idx = s.tabOrder.indexOf(s.activeMapTabId!)
           const next = e.shiftKey
-            ? allIds[(idx - 1 + allIds.length) % allIds.length]
-            : allIds[(idx + 1) % allIds.length]
+            ? s.tabOrder[(idx - 1 + s.tabOrder.length) % s.tabOrder.length]
+            : s.tabOrder[(idx + 1) % s.tabOrder.length]
           if (next !== s.activeMapTabId) s.switchMapTab(next)
         }
         return

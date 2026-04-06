@@ -71,7 +71,7 @@ export type ToolType = 'paint' | 'erase' | 'pick' | 'entity' | 'copy' | 'paste'
 
 // ── Entity types ──
 
-export type EntityType = 'DOOR' | 'SPAWN' | 'NPC' | 'CHEST' | 'SIGN' | 'TRIGGER' | 'LABEL'
+export type EntityType = 'DOOR' | 'SPAWN' | 'NPC' | 'CHEST' | 'SIGN' | 'TRIGGER' | 'LABEL' | 'WEATHER' | 'ZONE' | 'MUSIC'
 
 interface EntityBase {
   id: string
@@ -128,7 +128,30 @@ export interface LabelEntity extends EntityBase {
   text: string
 }
 
-export type Entity = DoorEntity | SpawnEntity | NpcEntity | ChestEntity | SignEntity | TriggerEntity | LabelEntity
+export interface WeatherEntity extends EntityBase {
+  type: 'WEATHER'
+  weatherType: string
+  intensity: number
+  runMin: number
+  runMax: number
+  pauseMin: number
+  pauseMax: number
+}
+
+export interface ZoneEntity extends EntityBase {
+  type: 'ZONE'
+  zoneName: string
+  town: boolean
+  fog: number
+}
+
+export interface MusicEntity extends EntityBase {
+  type: 'MUSIC'
+  trackId: string
+  volume: number
+}
+
+export type Entity = DoorEntity | SpawnEntity | NpcEntity | ChestEntity | SignEntity | TriggerEntity | LabelEntity | WeatherEntity | ZoneEntity | MusicEntity
 
 /** A snapshot of all per-map-tab state */
 export interface MapDocument {

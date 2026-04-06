@@ -95,6 +95,7 @@ export interface TileForgeState {
 
   // ── Map Tabs ──
   mapTabs: MapDocument[]
+  tabOrder: string[]
   activeMapTabId: string | null
   activeMapTabLabel: string
   nextUntitledNum: number
@@ -580,6 +581,7 @@ export const useStore = create<TileForgeState>((set, get) => ({
 
   // ── Map Tabs ──
   mapTabs: [],
+  tabOrder: [],
   activeMapTabId: null,
   activeMapTabLabel: '',
   nextUntitledNum: 1,
@@ -594,12 +596,15 @@ export const useStore = create<TileForgeState>((set, get) => ({
       if (s.activeMapTabId) {
         const snap = snapshotActiveTab(s)
         snap.label = activeLabel(s)
-        mapTabs = mapTabs.filter((t) => t.id !== s.activeMapTabId)
         mapTabs.push(snap)
       }
 
+      // Append new tab to display order
+      const tabOrder = [...s.tabOrder, newId]
+
       return {
         mapTabs,
+        tabOrder,
         activeMapTabId: newId,
         activeMapTabLabel: label,
         nextUntitledNum: s.nextUntitledNum + 1,
@@ -632,12 +637,15 @@ export const useStore = create<TileForgeState>((set, get) => ({
       if (s.activeMapTabId) {
         const snap = snapshotActiveTab(s)
         snap.label = activeLabel(s)
-        mapTabs = mapTabs.filter((t) => t.id !== s.activeMapTabId)
         mapTabs.push(snap)
       }
 
+      // Append new tab to display order
+      const tabOrder = [...s.tabOrder, newId]
+
       return {
         mapTabs,
+        tabOrder,
         activeMapTabId: newId,
         activeMapTabLabel: label,
         cells: doc.cells,
@@ -666,11 +674,10 @@ export const useStore = create<TileForgeState>((set, get) => ({
       const target = s.mapTabs.find((t) => t.id === tabId)
       if (!target) return s
 
-      // Snapshot current into background
+      // Snapshot current into background, replacing the target's slot
       const snap = snapshotActiveTab(s)
       snap.label = activeLabel(s)
-      const mapTabs = s.mapTabs.filter((t) => t.id !== s.activeMapTabId && t.id !== tabId)
-      mapTabs.push(snap)
+      const mapTabs = s.mapTabs.map((t) => (t.id === tabId ? snap : t))
 
       return {
         mapTabs,
@@ -680,20 +687,25 @@ export const useStore = create<TileForgeState>((set, get) => ({
 
   closeMapTab: (tabId) =>
     set((s) => {
+      const newOrder = s.tabOrder.filter((id) => id !== tabId)
+
       if (tabId === s.activeMapTabId) {
-        // Closing the active tab — switch to another first
-        const remaining = s.mapTabs
-        if (remaining.length > 0) {
-          const next = remaining[remaining.length - 1]
-          const mapTabs = remaining.filter((t) => t.id !== next.id)
+        // Closing the active tab — switch to adjacent in tabOrder
+        const idx = s.tabOrder.indexOf(tabId)
+        const nextId = newOrder[Math.min(idx, newOrder.length - 1)]
+        const next = nextId ? s.mapTabs.find((t) => t.id === nextId) : null
+
+        if (next) {
           return {
-            mapTabs,
+            mapTabs: s.mapTabs.filter((t) => t.id !== next.id),
+            tabOrder: newOrder,
             ...restoreTab(next),
           }
         }
         // Last tab — reset to empty
         return {
           mapTabs: [],
+          tabOrder: [],
           activeMapTabId: null,
           activeMapTabLabel: '',
           cells: [],
@@ -712,7 +724,10 @@ export const useStore = create<TileForgeState>((set, get) => ({
         }
       } else {
         // Closing a background tab
-        return { mapTabs: s.mapTabs.filter((t) => t.id !== tabId) }
+        return {
+          mapTabs: s.mapTabs.filter((t) => t.id !== tabId),
+          tabOrder: newOrder,
+        }
       }
     }),
 
