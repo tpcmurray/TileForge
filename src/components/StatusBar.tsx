@@ -1,7 +1,7 @@
 import { useStore } from '../store'
 
 export function StatusBar() {
-  const { tiles, mapWidth, mapHeight, cells, zoom, mapDirty, registryDirty } = useStore()
+  const { tiles, mapWidth, mapHeight, cells, zoom, mapDirty, registryDirty, activeMapTabLabel } = useStore()
   const cursorX = useStore((s) => (s as unknown as Record<string, number>)._cursorX ?? -1)
   const cursorY = useStore((s) => (s as unknown as Record<string, number>)._cursorY ?? -1)
 
@@ -37,7 +37,7 @@ export function StatusBar() {
       <span style={{ color: 'var(--text-dim)' }}>
         Map:{' '}
         <strong style={{ color: 'var(--text)', fontWeight: 500 }}>
-          {hasMap ? `${mapWidth} × ${mapHeight}` : 'No map'}
+          {hasMap ? `${activeMapTabLabel ? activeMapTabLabel + ' ' : ''}${mapWidth} × ${mapHeight}` : 'No map'}
         </strong>
       </span>
       <Separator />

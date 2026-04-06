@@ -157,7 +157,7 @@ export function useKeyboardShortcuts() {
         return
       }
 
-      // Ctrl+N — New map
+      // Ctrl+N — New map tab
       if (ctrl && e.key === 'n') {
         e.preventDefault()
         const w = prompt('Map width (cells):', '30')
@@ -166,8 +166,34 @@ export function useKeyboardShortcuts() {
           const width = parseInt(w)
           const height = parseInt(h)
           if (width > 0 && height > 0) {
-            useStore.getState().clearMap(width, height, '..')
+            useStore.getState().newMapTab(width, height, '..')
           }
+        }
+        return
+      }
+
+      // Ctrl+W — Close active map tab
+      if (ctrl && e.key === 'w') {
+        e.preventDefault()
+        const s = useStore.getState()
+        if (s.editorMode === 'map' && s.activeMapTabId) {
+          if ((s.mapDirty || s.entitiesDirty) && !confirm('This tab has unsaved changes. Close anyway?')) return
+          s.closeMapTab(s.activeMapTabId)
+        }
+        return
+      }
+
+      // Ctrl+Tab / Ctrl+Shift+Tab — Cycle map tabs
+      if (ctrl && e.key === 'Tab') {
+        e.preventDefault()
+        const s = useStore.getState()
+        if (s.editorMode === 'map' && s.mapTabs.length > 0) {
+          const allIds = [...s.mapTabs.map((t) => t.id), s.activeMapTabId!]
+          const idx = allIds.indexOf(s.activeMapTabId!)
+          const next = e.shiftKey
+            ? allIds[(idx - 1 + allIds.length) % allIds.length]
+            : allIds[(idx + 1) % allIds.length]
+          if (next !== s.activeMapTabId) s.switchMapTab(next)
         }
         return
       }
@@ -331,6 +357,29 @@ async function saveAllFiles() {
     }
     useStore.setState({ entitiesDirty: false })
   }
+
+  // Save dirty background map tabs
+  const updatedTabs = [...s.mapTabs]
+  for (let i = 0; i < updatedTabs.length; i++) {
+    const tab = updatedTabs[i]
+    let changed = false
+    if (tab.mapDirty && tab.mapFileHandle && tab.cells.length > 0) {
+      const w = await tab.mapFileHandle.createWritable()
+      await w.write(serializeTerrain(tab.cells))
+      await w.close()
+      tab.mapDirty = false
+      changed = true
+    }
+    if (tab.entitiesDirty && tab.entitiesFileHandle && (tab.entities.length > 0 || tab.entityComments.length > 0)) {
+      const w = await tab.entitiesFileHandle.createWritable()
+      await w.write(serializeEntities(tab.entities, tab.entityComments, tab.entityUnknownLines))
+      await w.close()
+      tab.entitiesDirty = false
+      changed = true
+    }
+    if (changed) updatedTabs[i] = { ...tab }
+  }
+  useStore.setState({ mapTabs: updatedTabs })
 
   // Save registry
   const tiles = [...s.tiles.values()]

@@ -6,6 +6,7 @@ import type {
   Operation,
   Entity,
   EntityChange,
+  MapDocument,
   RGBA,
 } from '../types'
 import type { SpriteVisualData, SpriteCell, SpriteState } from '../types/sprite'
@@ -92,6 +93,17 @@ export interface TileForgeState {
   setPlayerOverlay: (on: boolean) => void
   setPlayerOverlayPos: (pos: { x: number; y: number } | null) => void
 
+  // ── Map Tabs ──
+  mapTabs: MapDocument[]
+  activeMapTabId: string | null
+  activeMapTabLabel: string
+  nextUntitledNum: number
+  newMapTab: (width: number, height: number, fillCode: string) => void
+  openInMapTab: (doc: Partial<MapDocument> & { cells: string[][]; mapWidth: number; mapHeight: number }, label: string) => void
+  switchMapTab: (tabId: string) => void
+  closeMapTab: (tabId: string) => void
+  setActiveMapTabLabel: (label: string) => void
+
   // ── Editor Mode ──
   editorMode: 'map' | 'sprites' | 'dialogs' | 'cutscenes'
   setEditorMode: (mode: 'map' | 'sprites' | 'dialogs' | 'cutscenes') => void
@@ -161,6 +173,60 @@ export interface TileForgeState {
   updateCutsceneId: (oldId: string, newId: string) => void
 }
 
+// ── Tab snapshot/restore helpers ──
+
+function snapshotActiveTab(s: TileForgeState): MapDocument {
+  return {
+    id: s.activeMapTabId!,
+    label: '', // will be set by caller
+    cells: s.cells,
+    mapWidth: s.mapWidth,
+    mapHeight: s.mapHeight,
+    mapDirty: s.mapDirty,
+    mapFileHandle: s.mapFileHandle,
+    entities: s.entities,
+    entityComments: s.entityComments,
+    entityUnknownLines: s.entityUnknownLines,
+    entitiesDirty: s.entitiesDirty,
+    entitiesFileHandle: s.entitiesFileHandle,
+    selectedEntityId: s.selectedEntityId,
+    undoStack: s.undoStack,
+    redoStack: s.redoStack,
+    zoom: s.zoom,
+    panX: s.panX,
+    panY: s.panY,
+    showGrid: s.showGrid,
+  }
+}
+
+function activeLabel(s: TileForgeState): string {
+  return s.activeMapTabLabel || 'Untitled'
+}
+
+function restoreTab(doc: MapDocument): Partial<TileForgeState> {
+  return {
+    activeMapTabId: doc.id,
+    activeMapTabLabel: doc.label,
+    cells: doc.cells,
+    mapWidth: doc.mapWidth,
+    mapHeight: doc.mapHeight,
+    mapDirty: doc.mapDirty,
+    mapFileHandle: doc.mapFileHandle,
+    entities: doc.entities,
+    entityComments: doc.entityComments,
+    entityUnknownLines: doc.entityUnknownLines,
+    entitiesDirty: doc.entitiesDirty,
+    entitiesFileHandle: doc.entitiesFileHandle,
+    selectedEntityId: doc.selectedEntityId,
+    undoStack: doc.undoStack,
+    redoStack: doc.redoStack,
+    zoom: doc.zoom,
+    panX: doc.panX,
+    panY: doc.panY,
+    showGrid: doc.showGrid,
+  }
+}
+
 export const useStore = create<TileForgeState>((set, get) => ({
   // ── Registry ──
   tiles: new Map(),
@@ -178,12 +244,18 @@ export const useStore = create<TileForgeState>((set, get) => ({
       const tiles = new Map(s.tiles)
       if (code !== tile.code) {
         tiles.delete(code)
-        // Rename across map
+        // Rename across active map
         const cells = s.cells.map((row) =>
           row.map((c) => (c === code ? tile.code : c))
         )
+        // Rename across background tabs
+        const mapTabs = s.mapTabs.map((tab) => ({
+          ...tab,
+          cells: tab.cells.map((row) => row.map((c) => (c === code ? tile.code : c))),
+          mapDirty: true,
+        }))
         tiles.set(tile.code, tile)
-        return { tiles, cells, registryDirty: true, mapDirty: true }
+        return { tiles, cells, mapTabs, registryDirty: true, mapDirty: true }
       }
       tiles.set(tile.code, tile)
       return { tiles, registryDirty: true }
@@ -505,6 +577,146 @@ export const useStore = create<TileForgeState>((set, get) => ({
   playerOverlayPos: null,
   setPlayerOverlay: (on) => set({ playerOverlay: on, playerOverlayPos: on ? null : null }),
   setPlayerOverlayPos: (pos) => set({ playerOverlayPos: pos }),
+
+  // ── Map Tabs ──
+  mapTabs: [],
+  activeMapTabId: null,
+  activeMapTabLabel: '',
+  nextUntitledNum: 1,
+
+  newMapTab: (width, height, fillCode) =>
+    set((s) => {
+      const newId = crypto.randomUUID()
+      const label = `Untitled ${s.nextUntitledNum}`
+
+      // Snapshot current tab if one exists
+      let mapTabs = [...s.mapTabs]
+      if (s.activeMapTabId) {
+        const snap = snapshotActiveTab(s)
+        snap.label = activeLabel(s)
+        mapTabs = mapTabs.filter((t) => t.id !== s.activeMapTabId)
+        mapTabs.push(snap)
+      }
+
+      return {
+        mapTabs,
+        activeMapTabId: newId,
+        activeMapTabLabel: label,
+        nextUntitledNum: s.nextUntitledNum + 1,
+        cells: Array.from({ length: height }, () => Array.from({ length: width }, () => fillCode)),
+        mapWidth: width,
+        mapHeight: height,
+        mapDirty: false,
+        mapFileHandle: null,
+        entities: [],
+        entityComments: [],
+        entityUnknownLines: [],
+        entitiesDirty: false,
+        entitiesFileHandle: null,
+        selectedEntityId: null,
+        undoStack: [],
+        redoStack: [],
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        showGrid: true,
+      }
+    }),
+
+  openInMapTab: (doc, label) =>
+    set((s) => {
+      const newId = crypto.randomUUID()
+
+      // Snapshot current tab if one exists
+      let mapTabs = [...s.mapTabs]
+      if (s.activeMapTabId) {
+        const snap = snapshotActiveTab(s)
+        snap.label = activeLabel(s)
+        mapTabs = mapTabs.filter((t) => t.id !== s.activeMapTabId)
+        mapTabs.push(snap)
+      }
+
+      return {
+        mapTabs,
+        activeMapTabId: newId,
+        activeMapTabLabel: label,
+        cells: doc.cells,
+        mapWidth: doc.mapWidth,
+        mapHeight: doc.mapHeight,
+        mapDirty: doc.mapDirty ?? false,
+        mapFileHandle: doc.mapFileHandle ?? null,
+        entities: doc.entities ?? [],
+        entityComments: doc.entityComments ?? [],
+        entityUnknownLines: doc.entityUnknownLines ?? [],
+        entitiesDirty: doc.entitiesDirty ?? false,
+        entitiesFileHandle: doc.entitiesFileHandle ?? null,
+        selectedEntityId: null,
+        undoStack: [],
+        redoStack: [],
+        zoom: 1,
+        panX: 0,
+        panY: 0,
+        showGrid: true,
+      }
+    }),
+
+  switchMapTab: (tabId) =>
+    set((s) => {
+      if (tabId === s.activeMapTabId) return s
+      const target = s.mapTabs.find((t) => t.id === tabId)
+      if (!target) return s
+
+      // Snapshot current into background
+      const snap = snapshotActiveTab(s)
+      snap.label = activeLabel(s)
+      const mapTabs = s.mapTabs.filter((t) => t.id !== s.activeMapTabId && t.id !== tabId)
+      mapTabs.push(snap)
+
+      return {
+        mapTabs,
+        ...restoreTab(target),
+      }
+    }),
+
+  closeMapTab: (tabId) =>
+    set((s) => {
+      if (tabId === s.activeMapTabId) {
+        // Closing the active tab — switch to another first
+        const remaining = s.mapTabs
+        if (remaining.length > 0) {
+          const next = remaining[remaining.length - 1]
+          const mapTabs = remaining.filter((t) => t.id !== next.id)
+          return {
+            mapTabs,
+            ...restoreTab(next),
+          }
+        }
+        // Last tab — reset to empty
+        return {
+          mapTabs: [],
+          activeMapTabId: null,
+          activeMapTabLabel: '',
+          cells: [],
+          mapWidth: 0,
+          mapHeight: 0,
+          mapDirty: false,
+          mapFileHandle: null,
+          entities: [],
+          entityComments: [],
+          entityUnknownLines: [],
+          entitiesDirty: false,
+          entitiesFileHandle: null,
+          selectedEntityId: null,
+          undoStack: [],
+          redoStack: [],
+        }
+      } else {
+        // Closing a background tab
+        return { mapTabs: s.mapTabs.filter((t) => t.id !== tabId) }
+      }
+    }),
+
+  setActiveMapTabLabel: (label) => set({ activeMapTabLabel: label }),
 
   // ── Editor Mode ──
   editorMode: 'map',

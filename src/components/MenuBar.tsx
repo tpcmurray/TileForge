@@ -242,8 +242,7 @@ function buildFileItems(
           if (w && h) {
             const width = parseInt(w), height = parseInt(h)
             if (width > 0 && height > 0) {
-              store.getState().clearMap(width, height, '..')
-              store.getState().setMapFileHandle(null)
+              store.getState().newMapTab(width, height, '..')
             }
           }
           setOpenMenu(null)
@@ -258,12 +257,31 @@ function buildFileItems(
             types: [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }],
           }).catch(() => [null])
           if (!handle) return
+
+          // Check for duplicate: is this file already open in a tab?
+          const s = store.getState()
+          const allHandles: { tabId: string; h: FileSystemFileHandle }[] = []
+          if (s.activeMapTabId && s.mapFileHandle) {
+            allHandles.push({ tabId: s.activeMapTabId, h: s.mapFileHandle })
+          }
+          for (const tab of s.mapTabs) {
+            if (tab.mapFileHandle) allHandles.push({ tabId: tab.id, h: tab.mapFileHandle })
+          }
+          for (const entry of allHandles) {
+            if (await entry.h.isSameEntry(handle)) {
+              store.getState().switchMapTab(entry.tabId)
+              return
+            }
+          }
+
           const file = await handle.getFile()
           const text = await file.text()
           const knownCodes = new Set(store.getState().tiles.keys())
           const result = parseTerrain(text, knownCodes)
-          store.getState().loadMap(result.cells, result.width, result.height)
-          store.getState().setMapFileHandle(handle)
+          store.getState().openInMapTab(
+            { cells: result.cells, mapWidth: result.width, mapHeight: result.height, mapFileHandle: handle },
+            file.name,
+          )
           recordRecent(file.name, 'map', handle)
           if (result.unknownCodes.size > 0) {
             alert(`Unknown tile codes: ${[...result.unknownCodes].join(', ')}`)
@@ -298,7 +316,9 @@ function buildFileItems(
             const handle = await saveWithPicker(text, 'map.terrain', [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }], 'map')
             if (!handle) return
             store.getState().setMapFileHandle(handle)
-            recordRecent((await handle.getFile()).name, 'map', handle)
+            const name = (await handle.getFile()).name
+            store.getState().setActiveMapTabLabel(name)
+            recordRecent(name, 'map', handle)
           }
           store.setState({ mapDirty: false })
         },
@@ -313,7 +333,9 @@ function buildFileItems(
           const handle = await saveWithPicker(text, 'map.terrain', [{ description: 'Terrain files', accept: { 'text/plain': ['.terrain'] } }], 'map')
           if (!handle) return
           store.getState().setMapFileHandle(handle)
-          recordRecent((await handle.getFile()).name, 'map', handle)
+          const name = (await handle.getFile()).name
+          store.getState().setActiveMapTabLabel(name)
+          recordRecent(name, 'map', handle)
           store.setState({ mapDirty: false })
         },
       },
@@ -452,14 +474,29 @@ function buildFileItems(
             action: async () => {
               setOpenMenu(null)
               try {
+                // Check if already open in a tab
+                const s = store.getState()
+                const allHandles: { tabId: string; h: FileSystemFileHandle }[] = []
+                if (s.activeMapTabId && s.mapFileHandle) allHandles.push({ tabId: s.activeMapTabId, h: s.mapFileHandle })
+                for (const tab of s.mapTabs) {
+                  if (tab.mapFileHandle) allHandles.push({ tabId: tab.id, h: tab.mapFileHandle })
+                }
+                for (const ah of allHandles) {
+                  if (await ah.h.isSameEntry(entry.handle)) {
+                    store.getState().switchMapTab(ah.tabId)
+                    return
+                  }
+                }
                 const perm = await (entry.handle as any).requestPermission({ mode: 'readwrite' })
                 if (perm !== 'granted') return
                 const file = await entry.handle.getFile()
                 const text = await file.text()
                 const knownCodes = new Set(store.getState().tiles.keys())
                 const result = parseTerrain(text, knownCodes)
-                store.getState().loadMap(result.cells, result.width, result.height)
-                store.getState().setMapFileHandle(entry.handle)
+                store.getState().openInMapTab(
+                  { cells: result.cells, mapWidth: result.width, mapHeight: result.height, mapFileHandle: entry.handle },
+                  file.name,
+                )
                 recordRecent(file.name, 'map', entry.handle)
                 if (result.unknownCodes.size > 0) alert(`Unknown tile codes: ${[...result.unknownCodes].join(', ')}`)
               } catch { alert(`Could not open ${entry.name}.`) }
@@ -832,6 +869,25 @@ async function saveAll() {
     }
     useStore.setState({ entitiesDirty: false })
   }
+
+  // Save dirty background map tabs
+  const updatedTabs = [...s.mapTabs]
+  for (let i = 0; i < updatedTabs.length; i++) {
+    const tab = updatedTabs[i]
+    let changed = false
+    if (tab.mapDirty && tab.mapFileHandle && tab.cells.length > 0) {
+      await writeToHandle(tab.mapFileHandle, serializeTerrain(tab.cells))
+      tab.mapDirty = false
+      changed = true
+    }
+    if (tab.entitiesDirty && tab.entitiesFileHandle && (tab.entities.length > 0 || tab.entityComments.length > 0)) {
+      await writeToHandle(tab.entitiesFileHandle, serializeEntities(tab.entities, tab.entityComments, tab.entityUnknownLines))
+      tab.entitiesDirty = false
+      changed = true
+    }
+    if (changed) updatedTabs[i] = { ...tab }
+  }
+  useStore.setState({ mapTabs: updatedTabs })
 
   const tiles = [...s.tiles.values()]
   if (tiles.length > 0) {

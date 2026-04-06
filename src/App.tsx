@@ -1,4 +1,5 @@
 import { MenuBar } from './components/MenuBar'
+import { TabBar } from './components/TabBar'
 import { Toolbar } from './components/Toolbar'
 import { MapCanvas } from './components/MapCanvas'
 import { StatusBar } from './components/StatusBar'
@@ -35,6 +36,7 @@ export default function App() {
   return (
     <>
       <MenuBar />
+      <TabBar />
       <Editor />
       <StatusBar />
     </>

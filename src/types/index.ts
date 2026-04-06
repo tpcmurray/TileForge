@@ -130,6 +130,29 @@ export interface LabelEntity extends EntityBase {
 
 export type Entity = DoorEntity | SpawnEntity | NpcEntity | ChestEntity | SignEntity | TriggerEntity | LabelEntity
 
+/** A snapshot of all per-map-tab state */
+export interface MapDocument {
+  id: string
+  label: string
+  cells: string[][]
+  mapWidth: number
+  mapHeight: number
+  mapDirty: boolean
+  mapFileHandle: FileSystemFileHandle | null
+  entities: Entity[]
+  entityComments: string[]
+  entityUnknownLines: string[]
+  entitiesDirty: boolean
+  entitiesFileHandle: FileSystemFileHandle | null
+  selectedEntityId: string | null
+  undoStack: Operation[]
+  redoStack: Operation[]
+  zoom: number
+  panX: number
+  panY: number
+  showGrid: boolean
+}
+
 /** Rectangular selection on the map */
 export interface Selection {
   x: number
