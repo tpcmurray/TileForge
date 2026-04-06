@@ -107,12 +107,30 @@ function parseNpc(tokens: string[], lineNum: number): { entity: NpcEntity; error
   const pos = parseCoord(tokens[2])
   if (!pos) return { error: `Line ${lineNum}: NPC invalid position "${tokens[2]}"` }
 
+  let dialogue: string | null = null
+  let audio: NpcEntity['audio'] = null
+  for (let i = 3; i < tokens.length; i++) {
+    if (tokens[i].startsWith('dialogue:')) dialogue = tokens[i].slice(9)
+    else if (tokens[i].startsWith('audio:')) {
+      const parts = tokens[i].slice(6).split(',')
+      if (parts.length === 3) {
+        const radius = parseFloat(parts[1])
+        const volume = parseFloat(parts[2])
+        if (!isNaN(radius) && !isNaN(volume)) {
+          audio = { trackId: parts[0], radius, volume }
+        }
+      }
+    }
+  }
+
   return {
     entity: {
       id: crypto.randomUUID(),
       type: 'NPC',
       x: pos.x, y: pos.y,
       npcDefId: tokens[1],
+      dialogue,
+      audio,
     },
   }
 }
@@ -386,8 +404,12 @@ function serializeEntity(e: Entity): string {
       if (e.patrol) line += ` patrol:${e.patrol.x1},${e.patrol.y1},${e.patrol.x2},${e.patrol.y2}`
       return line
     }
-    case 'NPC':
-      return `NPC ${e.npcDefId} ${e.x},${e.y}`
+    case 'NPC': {
+      let line = `NPC ${e.npcDefId} ${e.x},${e.y}`
+      if (e.dialogue) line += ` dialogue:${e.dialogue}`
+      if (e.audio) line += ` audio:${e.audio.trackId},${e.audio.radius},${e.audio.volume}`
+      return line
+    }
     case 'CHEST':
       return `CHEST ${e.x},${e.y} ${e.lootTable} ${e.itemLevel}`
     case 'SIGN':

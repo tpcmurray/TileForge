@@ -33,7 +33,7 @@ function makeDefault(type: EntityType, x: number, y: number): Entity {
     case 'SPAWN':
       return { ...base, type: 'SPAWN', mobDefId: '', patrol: null, respawn: null }
     case 'NPC':
-      return { ...base, type: 'NPC', npcDefId: '' }
+      return { ...base, type: 'NPC', npcDefId: '', dialogue: null, audio: null }
     case 'CHEST':
       return { ...base, type: 'CHEST', lootTable: '', itemLevel: 1 }
     case 'SIGN':
@@ -261,10 +261,35 @@ function SpawnFields({ data, update }: { data: SpawnEntity; update: (p: Partial<
 
 function NpcFields({ data, update }: { data: NpcEntity; update: (p: Partial<NpcEntity>) => void }) {
   return (
-    <div className="mb-3">
-      <Label>NPC Definition ID</Label>
-      <TextInput value={data.npcDefId} onChange={(v) => update({ npcDefId: v })} />
-    </div>
+    <>
+      <div className="mb-3">
+        <Label>NPC Definition ID</Label>
+        <TextInput value={data.npcDefId} onChange={(v) => update({ npcDefId: v })} />
+      </div>
+      <div className="mb-3">
+        <Label>Dialogue ID (leave blank for none)</Label>
+        <TextInput value={data.dialogue ?? ''} onChange={(v) => update({ dialogue: v ? v : null })} />
+      </div>
+      <div className="mb-3">
+        <Label>Audio Track ID (leave blank for none)</Label>
+        <TextInput
+          value={data.audio?.trackId ?? ''}
+          onChange={(v) => update({ audio: v ? { trackId: v, radius: data.audio?.radius ?? 10, volume: data.audio?.volume ?? 1 } : null })}
+        />
+      </div>
+      {data.audio && (
+        <div className="grid grid-cols-2 gap-2 mb-3">
+          <div>
+            <Label>Audio Radius</Label>
+            <NumInput value={data.audio.radius} onChange={(v) => update({ audio: { ...data.audio!, radius: v } })} step={1} />
+          </div>
+          <div>
+            <Label>Audio Volume</Label>
+            <NumInput value={data.audio.volume} onChange={(v) => update({ audio: { ...data.audio!, volume: v } })} step={0.1} />
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 

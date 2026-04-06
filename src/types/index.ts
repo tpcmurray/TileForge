@@ -99,6 +99,8 @@ export interface SpawnEntity extends EntityBase {
 export interface NpcEntity extends EntityBase {
   type: 'NPC'
   npcDefId: string
+  dialogue: string | null
+  audio: { trackId: string; radius: number; volume: number } | null
 }
 
 export interface ChestEntity extends EntityBase {
