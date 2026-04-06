@@ -73,6 +73,7 @@ function parseSpawn(tokens: string[], lineNum: number): { entity: SpawnEntity; e
   if (!pos) return { error: `Line ${lineNum}: SPAWN invalid position "${tokens[2]}"` }
 
   let patrol: SpawnEntity['patrol'] = null
+  let respawn: number | null = null
   for (let i = 3; i < tokens.length; i++) {
     if (tokens[i].startsWith('patrol:')) {
       const parts = tokens[i].slice(7).split(',')
@@ -82,6 +83,9 @@ function parseSpawn(tokens: string[], lineNum: number): { entity: SpawnEntity; e
           patrol = { x1: nums[0], y1: nums[1], x2: nums[2], y2: nums[3] }
         }
       }
+    } else if (tokens[i].startsWith('respawn:')) {
+      const val = parseInt(tokens[i].slice(8), 10)
+      if (!isNaN(val)) respawn = val
     }
   }
 
@@ -92,6 +96,7 @@ function parseSpawn(tokens: string[], lineNum: number): { entity: SpawnEntity; e
       x: pos.x, y: pos.y,
       mobDefId: tokens[1],
       patrol,
+      respawn,
     },
   }
 }
@@ -295,6 +300,7 @@ function serializeEntity(e: Entity): string {
     }
     case 'SPAWN': {
       let line = `SPAWN ${e.mobDefId} ${e.x},${e.y}`
+      if (e.respawn != null) line += ` respawn:${e.respawn}`
       if (e.patrol) line += ` patrol:${e.patrol.x1},${e.patrol.y1},${e.patrol.x2},${e.patrol.y2}`
       return line
     }

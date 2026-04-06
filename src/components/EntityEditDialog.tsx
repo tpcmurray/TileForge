@@ -28,7 +28,7 @@ function makeDefault(type: EntityType, x: number, y: number): Entity {
     case 'DOOR':
       return { ...base, type: 'DOOR', w: 1, h: 1, targetZone: '', targetX: 0, targetY: 0 }
     case 'SPAWN':
-      return { ...base, type: 'SPAWN', mobDefId: '', patrol: null }
+      return { ...base, type: 'SPAWN', mobDefId: '', patrol: null, respawn: null }
     case 'NPC':
       return { ...base, type: 'NPC', npcDefId: '' }
     case 'CHEST':
@@ -216,6 +216,17 @@ function SpawnFields({ data, update }: { data: SpawnEntity; update: (p: Partial<
       <div className="mb-3">
         <Label>Mob Definition ID</Label>
         <TextInput value={data.mobDefId} onChange={(v) => update({ mobDefId: v })} />
+      </div>
+      <div className="mb-3">
+        <Label>Respawn (seconds — leave blank for none)</Label>
+        <TextInput
+          value={data.respawn != null ? String(data.respawn) : ''}
+          onChange={(v) => {
+            if (!v.trim()) { update({ respawn: null }); return }
+            const n = parseInt(v, 10)
+            if (!isNaN(n)) update({ respawn: n })
+          }}
+        />
       </div>
       <div className="mb-3">
         <Label>Patrol (x1,y1,x2,y2 — leave blank for none)</Label>

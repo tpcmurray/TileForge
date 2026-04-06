@@ -93,6 +93,7 @@ export interface SpawnEntity extends EntityBase {
   type: 'SPAWN'
   mobDefId: string
   patrol: { x1: number; y1: number; x2: number; y2: number } | null
+  respawn: number | null
 }
 
 export interface NpcEntity extends EntityBase {
