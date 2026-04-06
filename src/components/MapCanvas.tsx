@@ -4,6 +4,7 @@ import { buildAtlas } from '../rendering/atlas'
 import { renderMap } from '../rendering/renderer'
 import { useEntityTool } from '../hooks/useEntityTool'
 import { EntityEditDialog } from './EntityEditDialog'
+import { Minimap } from './Minimap'
 import type { Entity } from '../types'
 
 /** Base cell size in pixels at zoom 1.0 (1:2 ratio matching 8×16 characters) */
@@ -13,6 +14,7 @@ const BASE_CELL_H = 32
 export function MapCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 })
   const isPanning = useRef(false)
   const lastMouse = useRef({ x: 0, y: 0 })
   const isPainting = useRef(false)
@@ -27,7 +29,7 @@ export function MapCanvas() {
 
   const {
     cells, tiles, mapWidth, mapHeight,
-    zoom, panX, panY, showGrid,
+    zoom, panX, panY, showGrid, showMinimap,
     setZoom, setPan,
     activeTool,
     setCell, setActiveTile, setTool,
@@ -110,7 +112,11 @@ export function MapCanvas() {
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
-    const obs = new ResizeObserver(() => draw())
+    const obs = new ResizeObserver(() => {
+      draw()
+      const r = container.getBoundingClientRect()
+      setContainerSize({ w: r.width, h: r.height })
+    })
     obs.observe(container)
     return () => obs.disconnect()
   }, [draw])
@@ -400,6 +406,11 @@ export function MapCanvas() {
         >
           {Math.round(zoom * 100)}%
         </div>
+      )}
+
+      {/* Minimap */}
+      {hasMap && showMinimap && (
+        <Minimap containerWidth={containerSize.w} containerHeight={containerSize.h} />
       )}
 
       {/* Paste mode hint */}

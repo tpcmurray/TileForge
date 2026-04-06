@@ -203,6 +203,12 @@ export function useKeyboardShortcuts() {
         return
       }
 
+      // M — Toggle minimap
+      if (!ctrl && e.key.toLowerCase() === 'm') {
+        useStore.getState().toggleMinimap()
+        return
+      }
+
       // +/= — Zoom in
       if (!ctrl && (e.key === '+' || e.key === '=')) {
         const s = useStore.getState()
