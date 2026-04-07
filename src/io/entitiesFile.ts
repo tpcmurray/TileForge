@@ -1,4 +1,4 @@
-import type { Entity, DoorEntity, SpawnEntity, NpcEntity, ChestEntity, SignEntity, TriggerEntity, LabelEntity, WeatherEntity, ZoneEntity, MusicEntity } from '../types'
+import type { Entity, DoorEntity, SpawnEntity, NpcEntity, ChestEntity, SignEntity, TriggerEntity, LabelEntity, WeatherEntity, ZoneEntity, MusicEntity, ItemEntity } from '../types'
 
 export interface EntitiesParseResult {
   entities: Entity[]
@@ -301,6 +301,23 @@ function parseMusic(tokens: string[], lineNum: number): { entity: MusicEntity; e
   }
 }
 
+function parseItem(tokens: string[], lineNum: number): { entity: ItemEntity; error?: string } | { entity?: never; error: string } {
+  // ITEM x,y item_id
+  if (tokens.length < 3) return { error: `Line ${lineNum}: ITEM requires position and item_id` }
+
+  const pos = parseCoord(tokens[1])
+  if (!pos) return { error: `Line ${lineNum}: ITEM invalid position "${tokens[1]}"` }
+
+  return {
+    entity: {
+      id: crypto.randomUUID(),
+      type: 'ITEM',
+      x: pos.x, y: pos.y,
+      itemId: tokens[2],
+    },
+  }
+}
+
 function parseWeather(tokens: string[], lineNum: number): { entity: WeatherEntity; error?: string } | { entity?: never; error: string } {
   // WEATHER type intensity run_min run_max pause_min pause_max
   if (tokens.length < 7) return { error: `Line ${lineNum}: WEATHER requires 6 arguments (type intensity run_min run_max pause_min pause_max)` }
@@ -378,6 +395,9 @@ export function parseEntities(text: string): EntitiesParseResult {
       case 'MUSIC':
         result = parseMusic(tokens, i + 1)
         break
+      case 'ITEM':
+        result = parseItem(tokens, i + 1)
+        break
       default:
         unknownLines.push(lines[i])
         continue
@@ -433,6 +453,8 @@ function serializeEntity(e: Entity): string {
     }
     case 'MUSIC':
       return `MUSIC ${e.trackId} ${e.volume}`
+    case 'ITEM':
+      return `ITEM ${e.x},${e.y} ${e.itemId}`
   }
 }
 
@@ -449,7 +471,7 @@ export function serializeEntities(
   }
 
   // Group entities by type
-  const typeOrder: Entity['type'][] = ['ZONE', 'MUSIC', 'SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
+  const typeOrder: Entity['type'][] = ['ZONE', 'MUSIC', 'SPAWN', 'NPC', 'CHEST', 'ITEM', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
   for (const type of typeOrder) {
     const group = entities.filter((e) => e.type === type)
     for (const e of group) {

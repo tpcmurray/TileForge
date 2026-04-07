@@ -216,6 +216,7 @@ const ENTITY_COLORS: Record<string, string> = {
   SIGN: 'rgba(150,255,150,0.7)',
   TRIGGER: 'rgba(255,160,60,0.7)',
   LABEL: 'rgba(224,224,224,0.7)',
+  ITEM: 'rgba(255,213,79,0.7)',
 }
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -226,6 +227,7 @@ const ENTITY_LABELS: Record<string, string> = {
   SIGN: '!',
   TRIGGER: 'T',
   LABEL: 'L',
+  ITEM: 'i',
 }
 
 function renderEntities(

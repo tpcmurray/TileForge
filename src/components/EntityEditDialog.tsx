@@ -15,6 +15,7 @@ import type {
   WeatherEntity,
   ZoneEntity,
   MusicEntity,
+  ItemEntity,
 } from '../types'
 
 interface Props {
@@ -23,7 +24,7 @@ interface Props {
   onClose: () => void
 }
 
-const ENTITY_TYPES: EntityType[] = ['ZONE', 'MUSIC', 'SPAWN', 'NPC', 'CHEST', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
+const ENTITY_TYPES: EntityType[] = ['ZONE', 'MUSIC', 'SPAWN', 'NPC', 'CHEST', 'ITEM', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
 
 function makeDefault(type: EntityType, x: number, y: number): Entity {
   const base = { id: crypto.randomUUID(), x, y }
@@ -48,6 +49,8 @@ function makeDefault(type: EntityType, x: number, y: number): Entity {
       return { ...base, type: 'ZONE', x: 0, y: 0, zoneName: '', town: false, fog: 0 }
     case 'MUSIC':
       return { ...base, type: 'MUSIC', x: 0, y: 0, trackId: '', volume: 0.5 }
+    case 'ITEM':
+      return { ...base, type: 'ITEM', itemId: '' }
   }
 }
 
@@ -158,6 +161,7 @@ export function EntityEditDialog({ entity, defaultPos, onClose }: Props) {
         {data.type === 'WEATHER' && <WeatherFields data={data} update={update} />}
         {data.type === 'ZONE' && <ZoneFields data={data} update={update} />}
         {data.type === 'MUSIC' && <MusicFields data={data} update={update} />}
+        {data.type === 'ITEM' && <ItemFields data={data} update={update} />}
 
         {/* Actions */}
         <div className="flex items-center gap-2 mt-4">
@@ -521,6 +525,15 @@ function MusicFields({ data, update }: { data: MusicEntity; update: (p: Partial<
         <NumInput value={data.volume} onChange={(v) => update({ volume: v })} step={0.01} min={0} />
       </div>
     </>
+  )
+}
+
+function ItemFields({ data, update }: { data: ItemEntity; update: (p: Partial<ItemEntity>) => void }) {
+  return (
+    <div className="mb-3">
+      <Label>Item ID</Label>
+      <TextInput value={data.itemId} onChange={(v) => update({ itemId: v })} />
+    </div>
   )
 }
 
