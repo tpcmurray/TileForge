@@ -9,6 +9,7 @@ import { parseCutsceneFile, serializeCutsceneFile } from '../io/cutsceneFile'
 import { importCSharpRegistry } from '../io/csharpImporter'
 import { getRecentFiles, addRecentFile, clearRecentFiles } from '../utils/recentFiles'
 import type { RecentEntry } from '../utils/recentFiles'
+import { tryAutoLoadEntities, autoLoadEntitiesOrPromptForFolder } from '../utils/loadEntitiesSibling'
 
 interface MenuItem {
   label: string
@@ -286,20 +287,9 @@ function buildFileItems(
           if (result.unknownCodes.size > 0) {
             alert(`Unknown tile codes: ${[...result.unknownCodes].join(', ')}`)
           }
-          try {
-            const [eHandle] = await (window as any).showOpenFilePicker({
-              id: 'map',
-              types: [{ description: 'Entities files', accept: { 'text/plain': ['.entities'] } }],
-            })
-            if (eHandle) {
-              const eFile = await eHandle.getFile()
-              const eText = await eFile.text()
-              const eResult = parseEntities(eText)
-              if (eResult.errors.length > 0) alert('Entity errors:\n' + eResult.errors.join('\n'))
-              store.getState().loadEntities(eResult.entities, eResult.comments, eResult.unknownLines)
-              store.getState().setEntitiesFileHandle(eHandle)
-            }
-          } catch { /* cancelled */ }
+          // Try to auto-load the .entities sibling. If no workspace folder is
+          // known yet, prompt for folder access once (then it's automatic forever).
+          await autoLoadEntitiesOrPromptForFolder(handle, file.name)
         },
       },
       {
@@ -499,6 +489,10 @@ function buildFileItems(
                 )
                 recordRecent(file.name, 'map', entry.handle)
                 if (result.unknownCodes.size > 0) alert(`Unknown tile codes: ${[...result.unknownCodes].join(', ')}`)
+                // Try to silently auto-load the .entities sibling from any
+                // known workspace folder. Don't prompt here — users opening
+                // from recents expect a single click.
+                await tryAutoLoadEntities(entry.handle, file.name)
               } catch { alert(`Could not open ${entry.name}.`) }
             },
           })

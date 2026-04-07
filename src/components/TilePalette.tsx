@@ -13,7 +13,10 @@ export function TilePalette() {
   const updateTile = useStore((s) => s.updateTile)
   const deleteTile = useStore((s) => s.deleteTile)
   const [search, setSearch] = useState('')
-  const [editingTile, setEditingTile] = useState<TileDefinition | null | 'new'>(null)
+  // null = closed; 'new' = creating from scratch; { tile } = editing existing; { tile, duplicate: true } = creating new from template
+  const [editingTile, setEditingTile] = useState<
+    null | 'new' | { tile: TileDefinition; duplicate?: boolean }
+  >(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; tile: TileDefinition } | null>(null)
 
   const tileList = useMemo(() => [...tiles.values()], [tiles])
@@ -48,17 +51,25 @@ export function TilePalette() {
   }
 
   const handleDuplicate = (source: TileDefinition) => {
-    // Generate a unique code
-    let newCode = source.code[0] + '_'
-    let i = 0
-    while (tiles.has(newCode) && i < 100) {
-      newCode = source.code[0] + String.fromCharCode(48 + (i % 10))
-      i++
+    // Generate a unique 2-char code by trying source[0] + each char from a wide alphabet,
+    // then falling back to scanning all 2-char combos.
+    const alphabet = '_0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    let newCode = ''
+    for (const c of alphabet) {
+      const candidate = source.code[0] + c
+      if (!tiles.has(candidate)) { newCode = candidate; break }
     }
+    if (!newCode) {
+      outer: for (const a of alphabet) {
+        for (const b of alphabet) {
+          if (!tiles.has(a + b)) { newCode = a + b; break outer }
+        }
+      }
+    }
+    if (!newCode) return // registry effectively full
     setEditingTile({
-      ...source,
-      code: newCode,
-      name: source.name + ' (copy)',
+      tile: { ...source, code: newCode, name: source.name + ' (copy)' },
+      duplicate: true,
     })
     setContextMenu(null)
   }
@@ -103,7 +114,10 @@ export function TilePalette() {
         </button>
         {editingTile !== null && (
           <TileEditor
-            tile={editingTile === 'new' ? null : editingTile}
+            tile={editingTile === 'new' ? null : editingTile.tile}
+            originalCode={
+              editingTile === 'new' || editingTile.duplicate ? null : editingTile.tile.code
+            }
             existingCodes={new Set(tiles.keys())}
             onSave={handleSave}
             onClose={() => setEditingTile(null)}
@@ -147,7 +161,7 @@ export function TilePalette() {
                 tile={t}
                 selected={t.code === activeTileCode}
                 onSelect={() => setActiveTile(t.code)}
-                onDoubleClick={() => setEditingTile(t)}
+                onDoubleClick={() => setEditingTile({ tile: t })}
                 onContextMenu={(e) => {
                   e.preventDefault()
                   setContextMenu({ x: e.clientX, y: e.clientY, tile: t })
@@ -184,7 +198,7 @@ export function TilePalette() {
         <ContextMenu
           x={contextMenu.x}
           y={contextMenu.y}
-          onEdit={() => { setEditingTile(contextMenu.tile); setContextMenu(null) }}
+          onEdit={() => { setEditingTile({ tile: contextMenu.tile }); setContextMenu(null) }}
           onDuplicate={() => handleDuplicate(contextMenu.tile)}
           onDelete={() => handleDelete(contextMenu.tile)}
         />
@@ -193,7 +207,10 @@ export function TilePalette() {
       {/* Tile editor dialog */}
       {editingTile !== null && (
         <TileEditor
-          tile={editingTile === 'new' ? null : editingTile}
+          tile={editingTile === 'new' ? null : editingTile.tile}
+          originalCode={
+            editingTile === 'new' || editingTile.duplicate ? null : editingTile.tile.code
+          }
           existingCodes={new Set(tiles.keys())}
           onSave={handleSave}
           onClose={() => setEditingTile(null)}

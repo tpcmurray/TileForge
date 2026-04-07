@@ -6,17 +6,20 @@ import { CP437Dialog } from './CP437Dialog'
 import { ColorPicker } from './ColorPicker'
 
 interface TileEditorProps {
-  tile: TileDefinition | null // null = new tile
+  tile: TileDefinition | null // null = new tile (with empty defaults)
+  /** Code of the tile being edited in the registry. null = creating a brand-new tile (including duplicate-from-template). */
+  originalCode?: string | null
   existingCodes: Set<string>
   onSave: (tile: TileDefinition, originalCode: string | null) => void
   onClose: () => void
 }
 
-export function TileEditor({ tile, existingCodes, onSave, onClose }: TileEditorProps) {
-  const isNew = tile === null
+export function TileEditor({ tile, originalCode = tile?.code ?? null, existingCodes, onSave, onClose }: TileEditorProps) {
+  const isNew = originalCode === null
 
   const [code, setCode] = useState(tile?.code ?? '')
   const [name, setName] = useState(tile?.name ?? '')
+  const [category, setCategory] = useState(tile?.category ?? '')
   const [glyph, setGlyph] = useState(tile?.glyph ?? 1)
   const [fg, setFg] = useState<RGBA>(tile?.fg ?? { r: 255, g: 255, b: 255, a: 255 })
   const [bg, setBg] = useState<RGBA>(tile?.bg ?? { r: 0, g: 0, b: 0, a: 255 })
@@ -36,15 +39,30 @@ export function TileEditor({ tile, existingCodes, onSave, onClose }: TileEditorP
   const codeError =
     code.length !== 2
       ? 'Must be exactly 2 characters'
-      : (isNew || code !== tile?.code) && existingCodes.has(code)
+      : code !== originalCode && existingCodes.has(code)
         ? 'Code already exists'
         : null
 
   const handleSave = () => {
     if (codeError) return
     onSave(
-      { code, name, glyph, variants, fg, bg, walkable, transparent, lightPass, above, noAnim, speedMod, lightRadius },
-      tile?.code ?? null,
+      {
+        code,
+        name,
+        glyph,
+        variants,
+        fg,
+        bg,
+        walkable,
+        transparent,
+        lightPass,
+        above,
+        noAnim,
+        speedMod,
+        lightRadius,
+        ...(category.trim() ? { category: category.trim() } : {}),
+      },
+      originalCode,
     )
   }
 
@@ -129,6 +147,21 @@ export function TileEditor({ tile, existingCodes, onSave, onClose }: TileEditorP
                 {codeError}
               </div>
             )}
+
+            {/* Category */}
+            <Row label="Category">
+              <input
+                className="flex-1 text-sm rounded px-2 py-1.5 outline-none"
+                style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                }}
+                placeholder="Uncategorized"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              />
+            </Row>
 
             {/* Glyph */}
             <Row label="Glyph">

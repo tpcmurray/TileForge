@@ -47,6 +47,7 @@ function entitySummary(e: Entity): string {
 export function EntityPanel() {
   const entities = useStore((s) => s.entities)
   const selectedEntityId = useStore((s) => s.selectedEntityId)
+  const entitiesFileHandle = useStore((s) => s.entitiesFileHandle)
   const setSelectedEntity = useStore((s) => s.setSelectedEntity)
   const setPan = useStore((s) => s.setPan)
   const zoom = useStore((s) => s.zoom)
@@ -72,8 +73,39 @@ export function EntityPanel() {
     }))
     .filter((g) => g.items.length > 0)
 
+  const entitiesLoaded = entitiesFileHandle !== null
+  const entitiesFileName = entitiesFileHandle?.name ?? null
+
   return (
     <div>
+      {/* Entities file status indicator */}
+      <div
+        className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded text-[10px] font-mono"
+        style={{
+          background: 'var(--bg-surface)',
+          border: `1px solid ${entitiesLoaded ? '#3a7a3a' : '#7a5a3a'}`,
+          color: entitiesLoaded ? '#7fdc7f' : '#ffb86c',
+        }}
+        title={
+          entitiesLoaded
+            ? `Loaded: ${entitiesFileName}`
+            : 'No .entities file loaded — use File ▸ Open Entities… to load one manually'
+        }
+      >
+        <span
+          style={{
+            width: 8,
+            height: 8,
+            borderRadius: '50%',
+            background: entitiesLoaded ? '#7fdc7f' : '#ffb86c',
+            flexShrink: 0,
+          }}
+        />
+        <span className="truncate">
+          {entitiesLoaded ? entitiesFileName : 'No .entities file'}
+        </span>
+      </div>
+
       <button
         className="w-full text-xs py-1.5 rounded cursor-pointer mb-2"
         style={{
