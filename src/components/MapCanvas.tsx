@@ -11,6 +11,23 @@ import type { Entity } from '../types'
 const BASE_CELL_W = 16
 const BASE_CELL_H = 32
 
+/** Bresenham's line algorithm — returns all cells between (x0,y0) and (x1,y1) inclusive */
+function bresenhamLine(x0: number, y0: number, x1: number, y1: number): { x: number; y: number }[] {
+  const points: { x: number; y: number }[] = []
+  let dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0)
+  const sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1
+  let err = dx + dy
+  let cx = x0, cy = y0
+  while (true) {
+    points.push({ x: cx, y: cy })
+    if (cx === x1 && cy === y1) break
+    const e2 = 2 * err
+    if (e2 >= dy) { err += dy; cx += sx }
+    if (e2 <= dx) { err += dx; cy += sy }
+  }
+  return points
+}
+
 export function MapCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -22,6 +39,7 @@ export function MapCanvas() {
   const selStart = useRef({ x: 0, y: 0 })
   const paintedCells = useRef<Set<string>>(new Set())
   const strokeChanges = useRef<{ x: number; y: number; before: string; after: string }[]>([])
+  const lastPaintCell = useRef<{ x: number; y: number } | null>(null)
 
   const [pastePreview, setPastePreview] = useState<{ x: number; y: number } | null>(null)
   const [pasteMode, setPasteMode] = useState(false)
@@ -166,32 +184,41 @@ export function MapCanvas() {
 
   const entityTool = useEntityTool(mouseToCell, openEditDialog)
 
-  const applyTool = useCallback(
-    (cell: { x: number; y: number }) => {
+  const applyToolBatch = useCallback(
+    (cells: { x: number; y: number }[]) => {
       const s = useStore.getState()
-      const key = `${cell.x},${cell.y}`
       if (s.activeTool === 'paint') {
-        // Quick Paint: materialize tile on first cell of stroke
         if (s.onBeforePaint) s.onBeforePaint()
         const tileCode = s.activeTileCode
         if (!tileCode) return
-        if (paintedCells.current.has(key)) return
-        paintedCells.current.add(key)
-        const before = s.cells[cell.y]?.[cell.x] ?? '..'
-        if (before !== tileCode) {
-          strokeChanges.current.push({ x: cell.x, y: cell.y, before, after: tileCode })
-          s.setCell(cell.x, cell.y, tileCode)
+        const batch: { x: number; y: number; code: string }[] = []
+        for (const cell of cells) {
+          const key = `${cell.x},${cell.y}`
+          if (paintedCells.current.has(key)) continue
+          paintedCells.current.add(key)
+          const before = s.cells[cell.y]?.[cell.x] ?? '..'
+          if (before !== tileCode) {
+            strokeChanges.current.push({ x: cell.x, y: cell.y, before, after: tileCode })
+            batch.push({ x: cell.x, y: cell.y, code: tileCode })
+          }
         }
+        if (batch.length > 0) s.setCellRange(batch)
       } else if (s.activeTool === 'erase') {
-        if (paintedCells.current.has(key)) return
-        paintedCells.current.add(key)
-        const before = s.cells[cell.y]?.[cell.x] ?? '..'
         const eraseCode = '..'
-        if (before !== eraseCode) {
-          strokeChanges.current.push({ x: cell.x, y: cell.y, before, after: eraseCode })
-          s.setCell(cell.x, cell.y, eraseCode)
+        const batch: { x: number; y: number; code: string }[] = []
+        for (const cell of cells) {
+          const key = `${cell.x},${cell.y}`
+          if (paintedCells.current.has(key)) continue
+          paintedCells.current.add(key)
+          const before = s.cells[cell.y]?.[cell.x] ?? '..'
+          if (before !== eraseCode) {
+            strokeChanges.current.push({ x: cell.x, y: cell.y, before, after: eraseCode })
+            batch.push({ x: cell.x, y: cell.y, code: eraseCode })
+          }
         }
-      } else if (s.activeTool === 'pick') {
+        if (batch.length > 0) s.setCellRange(batch)
+      } else if (s.activeTool === 'pick' && cells.length > 0) {
+        const cell = cells[cells.length - 1]
         const code = s.cells[cell.y]?.[cell.x]
         if (code) {
           s.setActiveTile(code)
@@ -272,9 +299,10 @@ export function MapCanvas() {
       isPainting.current = true
       paintedCells.current.clear()
       strokeChanges.current = []
-      applyTool(cell)
+      lastPaintCell.current = cell
+      applyToolBatch([cell])
     },
-    [mouseToCell, applyTool, pasteMode, entityTool],
+    [mouseToCell, applyToolBatch, pasteMode, entityTool],
   )
 
   const handleMouseMove = useCallback(
@@ -318,10 +346,18 @@ export function MapCanvas() {
       }
 
       if (isPainting.current && cell) {
-        applyTool(cell)
+        const last = lastPaintCell.current
+        if (last && (last.x !== cell.x || last.y !== cell.y)) {
+          const line = bresenhamLine(last.x, last.y, cell.x, cell.y)
+          // Skip first point — it was the last cell painted already
+          applyToolBatch(line.slice(1))
+        } else if (!last) {
+          applyToolBatch([cell])
+        }
+        lastPaintCell.current = cell
       }
     },
-    [mouseToCell, applyTool, pasteMode, entityTool],
+    [mouseToCell, applyToolBatch, pasteMode, entityTool],
   )
 
   const handleMouseUp = useCallback(() => {
@@ -350,6 +386,7 @@ export function MapCanvas() {
       }
       paintedCells.current.clear()
       strokeChanges.current = []
+      lastPaintCell.current = null
     }
   }, [entityTool])
 

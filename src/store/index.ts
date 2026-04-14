@@ -299,13 +299,16 @@ export const useStore = create<TileForgeState>((set, get) => ({
 
   setCellRange: (changes) =>
     set((s) => {
-      const cells = s.cells.map((row) => [...row])
+      let cells = s.cells
+      let dirty = false
       for (const { x, y, code } of changes) {
-        if (y >= 0 && y < s.mapHeight && x >= 0 && x < s.mapWidth) {
-          cells[y][x] = code
-        }
+        if (y < 0 || y >= s.mapHeight || x < 0 || x >= s.mapWidth) continue
+        if (cells[y][x] === code) continue
+        if (!dirty) { cells = [...cells]; dirty = true }
+        if (cells[y] === s.cells[y]) cells[y] = [...cells[y]]
+        cells[y][x] = code
       }
-      return { cells, mapDirty: true }
+      return dirty ? { cells, mapDirty: true } : s
     }),
 
   loadMap: (cells, width, height) =>

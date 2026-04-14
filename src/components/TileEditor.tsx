@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { TileDefinition, RGBA } from '../types'
 import { cp437ToUnicode } from '../utils/cp437'
 import { rgbaToCSS } from '../rendering/tinting'
@@ -15,6 +15,12 @@ interface TileEditorProps {
 }
 
 export function TileEditor({ tile, originalCode = tile?.code ?? null, existingCodes, onSave, onClose }: TileEditorProps) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
   const isNew = originalCode === null
 
   const [code, setCode] = useState(tile?.code ?? '')
@@ -30,11 +36,12 @@ export function TileEditor({ tile, originalCode = tile?.code ?? null, existingCo
   const [noAnim, setNoAnim] = useState(tile?.noAnim ?? false)
   const [speedMod, setSpeedMod] = useState(tile?.speedMod ?? 1.0)
   const [lightRadius, setLightRadius] = useState(tile?.lightRadius ?? 0)
+  const [lightColor, setLightColor] = useState<RGBA | null>(tile?.lightColor ?? null)
   const [variants, setVariants] = useState<{ glyph: number; percent: number }[]>(tile?.variants ?? [])
 
   const [showCP437, setShowCP437] = useState(false)
   const [variantCP437Index, setVariantCP437Index] = useState<number | null>(null)
-  const [colorTarget, setColorTarget] = useState<'fg' | 'bg' | null>(null)
+  const [colorTarget, setColorTarget] = useState<'fg' | 'bg' | 'lightColor' | null>(null)
 
   const codeError =
     code.length !== 2
@@ -60,6 +67,7 @@ export function TileEditor({ tile, originalCode = tile?.code ?? null, existingCo
         noAnim,
         speedMod,
         lightRadius,
+        ...(lightColor ? { lightColor } : {}),
         ...(category.trim() ? { category: category.trim() } : {}),
       },
       originalCode,
@@ -330,6 +338,41 @@ export function TileEditor({ tile, originalCode = tile?.code ?? null, existingCo
                 }}
               />
             </Row>
+
+            {/* Light Color */}
+            <Row label="Light Color">
+              {lightColor ? (
+                <>
+                  <button
+                    className="w-8 h-8 rounded shrink-0 cursor-pointer"
+                    style={{ background: rgbaToCSS(lightColor), border: '2px solid var(--border-light)' }}
+                    onClick={() => setColorTarget('lightColor')}
+                  />
+                  <span className="font-mono text-[11px] ml-2" style={{ color: 'var(--text-dim)' }}>
+                    rgba({lightColor.r}, {lightColor.g}, {lightColor.b}, {lightColor.a})
+                  </span>
+                  <button
+                    className="text-[11px] px-1.5 py-0.5 rounded cursor-pointer ml-2"
+                    style={{ color: 'var(--red)', background: 'none', border: 'none' }}
+                    onClick={() => setLightColor(null)}
+                  >
+                    ✕
+                  </button>
+                </>
+              ) : (
+                <button
+                  className="text-[11px] px-2 py-1 rounded cursor-pointer"
+                  style={{
+                    background: 'transparent',
+                    border: '1px dashed var(--border-light)',
+                    color: 'var(--text-dim)',
+                  }}
+                  onClick={() => setLightColor({ r: 255, g: 200, b: 100, a: 255 })}
+                >
+                  + Add Light Color
+                </button>
+              )}
+            </Row>
           </div>
 
           {/* Footer */}
@@ -398,6 +441,13 @@ export function TileEditor({ tile, originalCode = tile?.code ?? null, existingCo
           onChange={setBg}
           onClose={() => setColorTarget(null)}
           showTransparent
+        />
+      )}
+      {colorTarget === 'lightColor' && lightColor && (
+        <ColorPicker
+          color={lightColor}
+          onChange={setLightColor}
+          onClose={() => setColorTarget(null)}
         />
       )}
     </>

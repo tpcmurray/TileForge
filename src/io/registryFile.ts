@@ -143,6 +143,7 @@ export function parseRegistry(json: string): RegistryParseResult {
         speedMod: t.speedMod as number,
         lightRadius: t.lightRadius as number,
         noAnim: (t.noAnim as boolean) ?? false,
+        ...(t.lightColor ? { lightColor: { r: (t.lightColor as any).r, g: (t.lightColor as any).g, b: (t.lightColor as any).b, a: (t.lightColor as any).a } } : {}),
         ...(t.category ? { category: t.category as string } : {}),
       })
     }
@@ -168,6 +169,7 @@ export function serializeRegistry(tiles: TileDefinition[]): string {
       speedMod: t.speedMod,
       lightRadius: t.lightRadius,
       ...(t.noAnim ? { noAnim: t.noAnim } : {}),
+      ...(t.lightColor ? { lightColor: { ...t.lightColor } } : {}),
       ...(t.category ? { category: t.category } : {}),
     })),
   }

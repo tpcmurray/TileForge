@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { cp437ToUnicode, cp437Name } from '../utils/cp437'
 
 interface CP437DialogProps {
@@ -8,6 +8,12 @@ interface CP437DialogProps {
 }
 
 export function CP437Dialog({ currentGlyph, onSelect, onClose }: CP437DialogProps) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
   const [hovered, setHovered] = useState<number | null>(null)
 
   const infoIndex = hovered ?? currentGlyph

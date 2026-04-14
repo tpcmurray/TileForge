@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '../store'
 import { ColorPicker } from './ColorPicker'
 import type { RGBA } from '../types'
@@ -55,6 +55,12 @@ function makeDefault(type: EntityType, x: number, y: number): Entity {
 }
 
 export function EntityEditDialog({ entity, defaultPos, onClose }: Props) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
   const isNew = !entity
   const pos = defaultPos ?? { x: 0, y: 0 }
   const [data, setData] = useState<Entity>(
@@ -229,6 +235,13 @@ function DoorFields({ data, update }: { data: DoorEntity; update: (p: Partial<Do
 }
 
 function SpawnFields({ data, update }: { data: SpawnEntity; update: (p: Partial<SpawnEntity>) => void }) {
+  const [patrolText, setPatrolText] = useState(
+    data.patrol ? `${data.patrol.x1},${data.patrol.y1},${data.patrol.x2},${data.patrol.y2}` : '',
+  )
+  const [respawnText, setRespawnText] = useState(
+    data.respawn != null ? String(data.respawn) : '',
+  )
+
   return (
     <>
       <div className="mb-3">
@@ -238,8 +251,9 @@ function SpawnFields({ data, update }: { data: SpawnEntity; update: (p: Partial<
       <div className="mb-3">
         <Label>Respawn (seconds — leave blank for none)</Label>
         <TextInput
-          value={data.respawn != null ? String(data.respawn) : ''}
+          value={respawnText}
           onChange={(v) => {
+            setRespawnText(v)
             if (!v.trim()) { update({ respawn: null }); return }
             const n = parseInt(v, 10)
             if (!isNaN(n)) update({ respawn: n })
@@ -249,8 +263,9 @@ function SpawnFields({ data, update }: { data: SpawnEntity; update: (p: Partial<
       <div className="mb-3">
         <Label>Patrol (x1,y1,x2,y2 — leave blank for none)</Label>
         <TextInput
-          value={data.patrol ? `${data.patrol.x1},${data.patrol.y1},${data.patrol.x2},${data.patrol.y2}` : ''}
+          value={patrolText}
           onChange={(v) => {
+            setPatrolText(v)
             if (!v.trim()) { update({ patrol: null }); return }
             const parts = v.split(',').map(parseFloat)
             if (parts.length === 4 && parts.every((n) => !isNaN(n))) {

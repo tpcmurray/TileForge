@@ -34,6 +34,8 @@ export interface TileDefinition {
   lightRadius: number
   /** Disable flicker animation for non-fire light sources */
   noAnim: boolean
+  /** Optional color of emitted light */
+  lightColor?: RGBA
   /** Optional category for palette grouping */
   category?: string
 }

@@ -9,6 +9,12 @@ interface ColorPickerProps {
 }
 
 export function ColorPicker({ color, onChange, onClose, showTransparent }: ColorPickerProps) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
   const [r, setR] = useState(color.r)
   const [g, setG] = useState(color.g)
   const [b, setB] = useState(color.b)
