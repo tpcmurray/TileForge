@@ -1,4 +1,4 @@
-import type { Entity, DoorEntity, SpawnEntity, NpcEntity, ChestEntity, SignEntity, TriggerEntity, LabelEntity, WeatherEntity, ZoneEntity, MusicEntity, ItemEntity } from '../types'
+import type { Entity, DoorEntity, SpawnEntity, NpcEntity, ChestEntity, SignEntity, TriggerEntity, LabelEntity, WeatherEntity, ZoneEntity, MusicEntity, ItemEntity, CritterEntity } from '../types'
 
 export interface EntitiesParseResult {
   entities: Entity[]
@@ -318,6 +318,36 @@ function parseItem(tokens: string[], lineNum: number): { entity: ItemEntity; err
   }
 }
 
+function parseCritter(tokens: string[], lineNum: number): { entity: CritterEntity; error?: string } | { entity?: never; error: string } {
+  // CRITTER critter_id x1,y1 x2,y2 occurrence:N
+  if (tokens.length < 4) return { error: `Line ${lineNum}: CRITTER requires critter_id and two corner coordinates` }
+
+  const corner1 = parseCoord(tokens[2])
+  if (!corner1) return { error: `Line ${lineNum}: CRITTER invalid first corner "${tokens[2]}"` }
+
+  const corner2 = parseCoord(tokens[3])
+  if (!corner2) return { error: `Line ${lineNum}: CRITTER invalid second corner "${tokens[3]}"` }
+
+  let occurrence = 1
+  for (let i = 4; i < tokens.length; i++) {
+    if (tokens[i].startsWith('occurrence:')) {
+      const v = parseFloat(tokens[i].slice(11))
+      if (!isNaN(v)) occurrence = v
+    }
+  }
+
+  return {
+    entity: {
+      id: crypto.randomUUID(),
+      type: 'CRITTER',
+      x: corner1.x, y: corner1.y,
+      x2: corner2.x, y2: corner2.y,
+      critterId: tokens[1],
+      occurrence,
+    },
+  }
+}
+
 function parseWeather(tokens: string[], lineNum: number): { entity: WeatherEntity; error?: string } | { entity?: never; error: string } {
   // WEATHER type intensity run_min run_max pause_min pause_max
   if (tokens.length < 7) return { error: `Line ${lineNum}: WEATHER requires 6 arguments (type intensity run_min run_max pause_min pause_max)` }
@@ -398,6 +428,9 @@ export function parseEntities(text: string): EntitiesParseResult {
       case 'ITEM':
         result = parseItem(tokens, i + 1)
         break
+      case 'CRITTER':
+        result = parseCritter(tokens, i + 1)
+        break
       default:
         unknownLines.push(lines[i])
         continue
@@ -455,6 +488,8 @@ function serializeEntity(e: Entity): string {
       return `MUSIC ${e.trackId} ${e.volume}`
     case 'ITEM':
       return `ITEM ${e.x},${e.y} ${e.itemId}`
+    case 'CRITTER':
+      return `CRITTER ${e.critterId} ${e.x},${e.y} ${e.x2},${e.y2} occurrence:${e.occurrence}`
   }
 }
 
@@ -471,7 +506,7 @@ export function serializeEntities(
   }
 
   // Group entities by type
-  const typeOrder: Entity['type'][] = ['ZONE', 'MUSIC', 'SPAWN', 'NPC', 'CHEST', 'ITEM', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
+  const typeOrder: Entity['type'][] = ['ZONE', 'MUSIC', 'SPAWN', 'CRITTER', 'NPC', 'CHEST', 'ITEM', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
   for (const type of typeOrder) {
     const group = entities.filter((e) => e.type === type)
     for (const e of group) {

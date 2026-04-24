@@ -16,6 +16,7 @@ import type {
   ZoneEntity,
   MusicEntity,
   ItemEntity,
+  CritterEntity,
 } from '../types'
 
 interface Props {
@@ -24,7 +25,7 @@ interface Props {
   onClose: () => void
 }
 
-const ENTITY_TYPES: EntityType[] = ['ZONE', 'MUSIC', 'SPAWN', 'NPC', 'CHEST', 'ITEM', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
+const ENTITY_TYPES: EntityType[] = ['ZONE', 'MUSIC', 'SPAWN', 'CRITTER', 'NPC', 'CHEST', 'ITEM', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
 
 function makeDefault(type: EntityType, x: number, y: number): Entity {
   const base = { id: crypto.randomUUID(), x, y }
@@ -51,6 +52,8 @@ function makeDefault(type: EntityType, x: number, y: number): Entity {
       return { ...base, type: 'MUSIC', x: 0, y: 0, trackId: '', volume: 0.5 }
     case 'ITEM':
       return { ...base, type: 'ITEM', itemId: '' }
+    case 'CRITTER':
+      return { ...base, type: 'CRITTER', critterId: '', x2: x + 10, y2: y + 10, occurrence: 1 }
   }
 }
 
@@ -168,6 +171,7 @@ export function EntityEditDialog({ entity, defaultPos, onClose }: Props) {
         {data.type === 'ZONE' && <ZoneFields data={data} update={update} />}
         {data.type === 'MUSIC' && <MusicFields data={data} update={update} />}
         {data.type === 'ITEM' && <ItemFields data={data} update={update} />}
+        {data.type === 'CRITTER' && <CritterFields data={data} update={update} />}
 
         {/* Actions */}
         <div className="flex items-center gap-2 mt-4">
@@ -549,6 +553,25 @@ function ItemFields({ data, update }: { data: ItemEntity; update: (p: Partial<It
       <Label>Item ID</Label>
       <TextInput value={data.itemId} onChange={(v) => update({ itemId: v })} />
     </div>
+  )
+}
+
+function CritterFields({ data, update }: { data: CritterEntity; update: (p: Partial<CritterEntity>) => void }) {
+  return (
+    <>
+      <div className="mb-3">
+        <Label>Critter ID</Label>
+        <TextInput value={data.critterId} onChange={(v) => update({ critterId: v })} />
+      </div>
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        <div><Label>Corner 2 X</Label><NumInput value={data.x2} onChange={(v) => update({ x2: v })} step={1} /></div>
+        <div><Label>Corner 2 Y</Label><NumInput value={data.y2} onChange={(v) => update({ y2: v })} step={1} /></div>
+      </div>
+      <div className="mb-3">
+        <Label>Occurrence</Label>
+        <NumInput value={data.occurrence} onChange={(v) => update({ occurrence: v })} min={0} step={1} />
+      </div>
+    </>
   )
 }
 

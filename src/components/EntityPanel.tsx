@@ -15,6 +15,7 @@ const TYPE_COLORS: Record<EntityType, string> = {
   ZONE: '#b0bec5',
   MUSIC: '#ce93d8',
   ITEM: '#ffd54f',
+  CRITTER: '#8bc34a',
 }
 
 const TYPE_LABELS: Record<EntityType, string> = {
@@ -29,6 +30,7 @@ const TYPE_LABELS: Record<EntityType, string> = {
   ZONE: 'Z',
   MUSIC: 'M',
   ITEM: 'i',
+  CRITTER: 'c',
 }
 
 function entitySummary(e: Entity): string {
@@ -44,6 +46,7 @@ function entitySummary(e: Entity): string {
     case 'ZONE': return `${e.zoneName}${e.town ? ' (town)' : ''}`
     case 'MUSIC': return `${e.trackId} vol:${e.volume}`
     case 'ITEM': return e.itemId
+    case 'CRITTER': return `${e.critterId} ${e.x},${e.y}→${e.x2},${e.y2}`
   }
 }
 
@@ -68,7 +71,7 @@ export function EntityPanel() {
   }
 
   // Group by type
-  const typeOrder: EntityType[] = ['ZONE', 'MUSIC', 'SPAWN', 'NPC', 'CHEST', 'ITEM', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
+  const typeOrder: EntityType[] = ['ZONE', 'MUSIC', 'SPAWN', 'CRITTER', 'NPC', 'CHEST', 'ITEM', 'SIGN', 'DOOR', 'TRIGGER', 'LABEL', 'WEATHER']
   const grouped = typeOrder
     .map((type) => ({
       type,

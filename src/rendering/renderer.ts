@@ -217,6 +217,7 @@ const ENTITY_COLORS: Record<string, string> = {
   TRIGGER: 'rgba(255,160,60,0.7)',
   LABEL: 'rgba(224,224,224,0.7)',
   ITEM: 'rgba(255,213,79,0.7)',
+  CRITTER: 'rgba(139,195,74,0.35)',
 }
 
 const ENTITY_LABELS: Record<string, string> = {
@@ -228,6 +229,7 @@ const ENTITY_LABELS: Record<string, string> = {
   TRIGGER: 'T',
   LABEL: 'L',
   ITEM: 'i',
+  CRITTER: 'c',
 }
 
 function renderEntities(
@@ -249,14 +251,26 @@ function renderEntities(
   ctx.textBaseline = 'middle'
 
   for (const e of entities) {
-    const ew = 'w' in e ? (e as { w: number }).w : 1
-    const eh = 'h' in e ? (e as { h: number }).h : 1
+    let ex = e.x
+    let ey = e.y
+    let ew: number
+    let eh: number
+    if (e.type === 'CRITTER') {
+      // CRITTER uses two corners — normalize to top-left + size
+      ex = Math.min(e.x, e.x2)
+      ey = Math.min(e.y, e.y2)
+      ew = Math.abs(e.x2 - e.x) + 1
+      eh = Math.abs(e.y2 - e.y) + 1
+    } else {
+      ew = 'w' in e ? (e as { w: number }).w : 1
+      eh = 'h' in e ? (e as { h: number }).h : 1
+    }
 
     // Skip entities entirely outside visible range
-    if (e.x + ew <= startCol || e.x >= endCol || e.y + eh <= startRow || e.y >= endRow) continue
+    if (ex + ew <= startCol || ex >= endCol || ey + eh <= startRow || ey >= endRow) continue
 
-    const x = panX + e.x * cellW
-    const y = panY + e.y * cellH
+    const x = panX + ex * cellW
+    const y = panY + ey * cellH
     const w = ew * cellW
     const h = eh * cellH
 

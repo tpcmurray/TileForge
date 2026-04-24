@@ -73,7 +73,7 @@ export type ToolType = 'paint' | 'erase' | 'pick' | 'entity' | 'copy' | 'paste'
 
 // ── Entity types ──
 
-export type EntityType = 'DOOR' | 'SPAWN' | 'NPC' | 'CHEST' | 'SIGN' | 'TRIGGER' | 'LABEL' | 'WEATHER' | 'ZONE' | 'MUSIC' | 'ITEM'
+export type EntityType = 'DOOR' | 'SPAWN' | 'NPC' | 'CHEST' | 'SIGN' | 'TRIGGER' | 'LABEL' | 'WEATHER' | 'ZONE' | 'MUSIC' | 'ITEM' | 'CRITTER'
 
 interface EntityBase {
   id: string
@@ -160,7 +160,15 @@ export interface ItemEntity extends EntityBase {
   itemId: string
 }
 
-export type Entity = DoorEntity | SpawnEntity | NpcEntity | ChestEntity | SignEntity | TriggerEntity | LabelEntity | WeatherEntity | ZoneEntity | MusicEntity | ItemEntity
+export interface CritterEntity extends EntityBase {
+  type: 'CRITTER'
+  critterId: string
+  x2: number
+  y2: number
+  occurrence: number
+}
+
+export type Entity = DoorEntity | SpawnEntity | NpcEntity | ChestEntity | SignEntity | TriggerEntity | LabelEntity | WeatherEntity | ZoneEntity | MusicEntity | ItemEntity | CritterEntity
 
 /** A snapshot of all per-map-tab state */
 export interface MapDocument {
