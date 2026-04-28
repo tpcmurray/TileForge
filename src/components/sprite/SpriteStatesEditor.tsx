@@ -15,7 +15,9 @@ export function SpriteStatesEditor({ npc }: { npc: SpriteVisualData }) {
   const setCurrentFg = useStore((s) => s.setSpriteCurrentFg)
   const setCurrentBg = useStore((s) => s.setSpriteCurrentBg)
   const expandGrid = useStore((s) => s.expandSpriteGrid)
+  const shrinkGrid = useStore((s) => s.shrinkSpriteGrid)
   const addSpriteState = useStore((s) => s.addSpriteState)
+  const deleteSpriteState = useStore((s) => s.deleteSpriteState)
   const renameSpriteState = useStore((s) => s.renameSpriteState)
   const pasteSpriteState = useStore((s) => s.pasteSpriteState)
 
@@ -78,6 +80,16 @@ export function SpriteStatesEditor({ npc }: { npc: SpriteVisualData }) {
     }
   }
 
+  const handleDeleteState = (state: string) => {
+    if (stateNames.length <= 1) {
+      window.alert('Cannot delete the last state.')
+      return
+    }
+    if (window.confirm(`Delete state "${state}"?`)) {
+      deleteSpriteState(state)
+    }
+  }
+
   const startRename = (state: string) => {
     setRenamingState(state)
     setRenameValue(state)
@@ -113,6 +125,19 @@ export function SpriteStatesEditor({ npc }: { npc: SpriteVisualData }) {
               title={`Add blank ${dir === 'top' || dir === 'bottom' ? 'row' : 'column'} to ${dir}`}
             >
               {{ top: '\u2191', bottom: '\u2193', left: '\u2190', right: '\u2192' }[dir]}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-0.5">
+          {(['top', 'bottom', 'left', 'right'] as const).map((dir) => (
+            <button
+              key={dir}
+              className="text-[10px] font-mono px-1.5 py-0.5 rounded cursor-pointer"
+              style={btnStyle}
+              onClick={() => shrinkGrid(dir)}
+              title={`Remove ${dir === 'top' || dir === 'bottom' ? 'row' : 'column'} from ${dir}`}
+            >
+              {{ top: '↥', bottom: '↧', left: '↤', right: '↦' }[dir]}
             </button>
           ))}
         </div>
@@ -192,6 +217,19 @@ export function SpriteStatesEditor({ npc }: { npc: SpriteVisualData }) {
                     title="Paste mirrored (horizontally flipped)"
                   >
                     Mirror
+                  </button>
+                  <button
+                    className="text-[9px] font-mono px-1.5 py-0.5 rounded cursor-pointer"
+                    style={{
+                      ...btnStyle,
+                      color: '#ff8080',
+                      opacity: stateNames.length <= 1 ? 0.4 : 1,
+                    }}
+                    onClick={() => handleDeleteState(state)}
+                    disabled={stateNames.length <= 1}
+                    title={stateNames.length <= 1 ? 'Cannot delete the last state' : 'Delete this state'}
+                  >
+                    ✕
                   </button>
                 </div>
               </div>

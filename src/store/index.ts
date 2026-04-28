@@ -29,6 +29,7 @@ export interface TileForgeState {
   mapDirty: boolean
   setCell: (x: number, y: number, code: string) => void
   setCellRange: (changes: { x: number; y: number; code: string }[]) => void
+  replaceAllCells: (fromCode: string, toCode: string) => number
   loadMap: (cells: string[][], width: number, height: number) => void
   clearMap: (width: number, height: number, fillCode: string) => void
 
@@ -134,7 +135,9 @@ export interface TileForgeState {
   setSpriteActiveState: (s: string) => void
   copySpriteState: (from: string, to: string) => void
   expandSpriteGrid: (direction: 'top' | 'bottom' | 'left' | 'right') => void
+  shrinkSpriteGrid: (direction: 'top' | 'bottom' | 'left' | 'right') => void
   addSpriteState: (name: string) => void
+  deleteSpriteState: (name: string) => void
   renameSpriteState: (oldName: string, newName: string) => void
   pasteSpriteState: (targetState: string, source: SpriteState) => void
 
@@ -310,6 +313,34 @@ export const useStore = create<TileForgeState>((set, get) => ({
       }
       return dirty ? { cells, mapDirty: true } : s
     }),
+
+  replaceAllCells: (fromCode, toCode) => {
+    let count = 0
+    set((s) => {
+      if (fromCode === toCode) return s
+      const changes: Operation['changes'] = []
+      let cells = s.cells
+      let dirty = false
+      for (let y = 0; y < s.mapHeight; y++) {
+        for (let x = 0; x < s.mapWidth; x++) {
+          if (cells[y][x] !== fromCode) continue
+          changes.push({ x, y, before: fromCode, after: toCode })
+          if (!dirty) { cells = [...cells]; dirty = true }
+          if (cells[y] === s.cells[y]) cells[y] = [...cells[y]]
+          cells[y][x] = toCode
+        }
+      }
+      if (changes.length === 0) return s
+      count = changes.length
+      return {
+        cells,
+        mapDirty: true,
+        undoStack: [...s.undoStack, { description: `Replace ${fromCode} → ${toCode}`, changes }],
+        redoStack: [],
+      }
+    })
+    return count
+  },
 
   loadMap: (cells, width, height) =>
     set(() => ({
@@ -863,6 +894,52 @@ export const useStore = create<TileForgeState>((set, get) => ({
       }
     }),
 
+  shrinkSpriteGrid: (direction) =>
+    set((s) => {
+      const item = s.sprites.find((n) => n.id === s.selectedSpriteId)
+      if (!item) return s
+
+      const updatedSprite: Record<string, SpriteState> = {}
+      for (const [name, state] of Object.entries(item.sprite)) {
+        let { rows, width, height } = state
+        if (width <= 1 && (direction === 'left' || direction === 'right')) {
+          updatedSprite[name] = state
+          continue
+        }
+        if (height <= 1 && (direction === 'top' || direction === 'bottom')) {
+          updatedSprite[name] = state
+          continue
+        }
+
+        switch (direction) {
+          case 'top':
+            rows = rows.slice(1)
+            height -= 1
+            break
+          case 'bottom':
+            rows = rows.slice(0, -1)
+            height -= 1
+            break
+          case 'left':
+            rows = rows.map((r) => r.slice(1))
+            width -= 1
+            break
+          case 'right':
+            rows = rows.map((r) => r.slice(0, -1))
+            width -= 1
+            break
+        }
+        updatedSprite[name] = { rows, width, height }
+      }
+
+      const updated = { ...item, sprite: updatedSprite }
+      return {
+        sprites: s.sprites.map((n) => (n.id === s.selectedSpriteId ? updated : n)),
+        spritesDirty: true,
+        spriteSelectedCell: null,
+      }
+    }),
+
   addSpriteState: (name) =>
     set((s) => {
       const item = s.sprites.find((n) => n.id === s.selectedSpriteId)
@@ -882,6 +959,24 @@ export const useStore = create<TileForgeState>((set, get) => ({
       return {
         sprites: s.sprites.map((n) => (n.id === s.selectedSpriteId ? updated : n)),
         spritesDirty: true,
+      }
+    }),
+
+  deleteSpriteState: (name) =>
+    set((s) => {
+      const item = s.sprites.find((n) => n.id === s.selectedSpriteId)
+      if (!item || !item.sprite[name]) return s
+      if (Object.keys(item.sprite).length <= 1) return s // don't delete the last state
+
+      const updatedSprite: Record<string, SpriteState> = {}
+      for (const [k, v] of Object.entries(item.sprite)) {
+        if (k !== name) updatedSprite[k] = v
+      }
+      const updated = { ...item, sprite: updatedSprite }
+      return {
+        sprites: s.sprites.map((n) => (n.id === s.selectedSpriteId ? updated : n)),
+        spritesDirty: true,
+        spriteSelectedCell: s.spriteSelectedCell?.target === name ? null : s.spriteSelectedCell,
       }
     }),
 
