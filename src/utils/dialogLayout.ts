@@ -9,82 +9,201 @@ export const NODE_W = 180
 export const NODE_H = 80
 const GAP_X = 40
 const GAP_Y = 100
+const MIN_X = NODE_W + GAP_X
 
 /**
- * Compute a layered DAG layout for a dialog tree.
- * BFS from root assigns layers; nodes are centered per layer.
- * Unreachable nodes are placed in a final bottom row.
+ * Layered DAG layout for a dialog tree.
+ *
+ * 1. DFS from root identifies cycles. Edges that close a cycle are demoted to "back-edges"
+ *    so the rest of the graph is treated as a DAG.
+ * 2. Layers are assigned by longest-path-from-source via Kahn's algorithm — guaranteeing
+ *    every forward edge points strictly to a deeper layer (i.e. arrows go down).
+ * 3. Within each layer, nodes are placed at the barycenter of their parents' x. A
+ *    forward+backward sweep enforces minimum horizontal spacing while staying close to
+ *    each node's barycenter, producing a staggered layout aligned with the parents above.
+ * 4. Orphan nodes (unreachable from root) are placed in a final row beneath the tree.
  */
 export function layoutDialogTree(tree: DialogTree): Record<string, NodePosition> {
   const nodeIds = Object.keys(tree.nodes)
   if (nodeIds.length === 0) return {}
 
-  // BFS to assign layers
-  const layers = new Map<string, number>()
-  const queue: string[] = []
-
-  if (tree.nodes[tree.root]) {
-    queue.push(tree.root)
-    layers.set(tree.root, 0)
-  }
-
-  while (queue.length > 0) {
-    const id = queue.shift()!
+  // ── Build adjacency (deduped, valid targets only) ──
+  const out = new Map<string, string[]>()
+  for (const id of nodeIds) {
     const node = tree.nodes[id]
-    const depth = layers.get(id)!
-
-    // Follow choice edges
+    const seen = new Set<string>()
+    const children: string[] = []
     if (node.choices) {
-      for (const choice of node.choices) {
-        if (choice.next && tree.nodes[choice.next] && !layers.has(choice.next)) {
-          layers.set(choice.next, depth + 1)
-          queue.push(choice.next)
+      for (const c of node.choices) {
+        if (c.next && tree.nodes[c.next] && !seen.has(c.next)) {
+          children.push(c.next)
+          seen.add(c.next)
         }
       }
     }
+    if (node.fallback && tree.nodes[node.fallback] && !seen.has(node.fallback)) {
+      children.push(node.fallback)
+    }
+    out.set(id, children)
+  }
 
-    // Follow fallback edge
-    if (node.fallback && tree.nodes[node.fallback] && !layers.has(node.fallback)) {
-      layers.set(node.fallback, depth + 1)
-      queue.push(node.fallback)
+  // ── DFS from root: identify reachable set + back-edges (iterative to avoid stack overflow) ──
+  const reachable = new Set<string>()
+  const backEdge = new Set<string>()
+  const color = new Map<string, 1 | 2>() // 1 = on stack, 2 = finished
+
+  const edgeKey = (u: string, v: string): string => `${u}\x00${v}`
+
+  if (tree.nodes[tree.root]) {
+    const stack: { id: string; idx: number }[] = []
+    stack.push({ id: tree.root, idx: 0 })
+    color.set(tree.root, 1)
+    reachable.add(tree.root)
+    while (stack.length > 0) {
+      const top = stack[stack.length - 1]
+      const children = out.get(top.id) ?? []
+      if (top.idx >= children.length) {
+        color.set(top.id, 2)
+        stack.pop()
+        continue
+      }
+      const v = children[top.idx++]
+      if (color.get(v) === 1) {
+        backEdge.add(edgeKey(top.id, v))
+      } else if (!color.has(v)) {
+        color.set(v, 1)
+        reachable.add(v)
+        stack.push({ id: v, idx: 0 })
+      }
     }
   }
 
-  // Collect orphan nodes (unreachable from root)
-  const orphans = nodeIds.filter((id) => !layers.has(id))
-  const maxLayer = layers.size > 0 ? Math.max(...layers.values()) : -1
+  const isForward = (u: string, v: string): boolean =>
+    reachable.has(v) && !backEdge.has(edgeKey(u, v))
 
-  // Place orphans in a row below the last layer
-  for (let i = 0; i < orphans.length; i++) {
-    layers.set(orphans[i], maxLayer + 1)
+  // ── Forward parents map ──
+  const forwardParents = new Map<string, string[]>()
+  for (const id of reachable) forwardParents.set(id, [])
+  for (const u of reachable) {
+    for (const v of out.get(u) ?? []) {
+      if (isForward(u, v)) forwardParents.get(v)!.push(u)
+    }
   }
 
-  // Group nodes by layer
+  // ── Longest-path layering via Kahn's algorithm ──
+  const layer = new Map<string, number>()
+  const inDeg = new Map<string, number>()
+  for (const id of reachable) inDeg.set(id, forwardParents.get(id)!.length)
+
+  const queue: string[] = []
+  for (const [id, d] of inDeg) {
+    if (d === 0) {
+      queue.push(id)
+      layer.set(id, 0)
+    }
+  }
+
+  while (queue.length > 0) {
+    const u = queue.shift()!
+    const ul = layer.get(u)!
+    for (const v of out.get(u) ?? []) {
+      if (!isForward(u, v)) continue
+      const newL = ul + 1
+      if ((layer.get(v) ?? -1) < newL) layer.set(v, newL)
+      const d = inDeg.get(v)! - 1
+      inDeg.set(v, d)
+      if (d === 0) queue.push(v)
+    }
+  }
+
+  // ── Orphans (unreachable from root) go in a final row ──
+  const reachLayers = [...layer.values()]
+  const maxReachLayer = reachLayers.length > 0 ? Math.max(...reachLayers) : -1
+  const orphans = nodeIds.filter((id) => !reachable.has(id))
+  for (const o of orphans) layer.set(o, maxReachLayer + 1)
+
+  // ── Group by layer ──
   const byLayer = new Map<number, string[]>()
-  for (const [id, layer] of layers) {
-    if (!byLayer.has(layer)) byLayer.set(layer, [])
-    byLayer.get(layer)!.push(id)
+  for (const [id, l] of layer) {
+    if (!byLayer.has(l)) byLayer.set(l, [])
+    byLayer.get(l)!.push(id)
   }
+  const layerNums = [...byLayer.keys()].sort((a, b) => a - b)
 
-  // Position each node
   const positions: Record<string, NodePosition> = {}
 
-  for (const [layer, ids] of byLayer) {
-    const rowWidth = ids.length * NODE_W + (ids.length - 1) * GAP_X
-    const startX = -rowWidth / 2 + NODE_W / 2
+  const placeEven = (ids: string[], y: number) => {
+    const sorted = [...ids].sort((a, b) => {
+      if (a === tree.root) return -1
+      if (b === tree.root) return 1
+      return a.localeCompare(b)
+    })
+    const total = sorted.length * NODE_W + Math.max(0, sorted.length - 1) * GAP_X
+    const left = -total / 2
+    for (let i = 0; i < sorted.length; i++) {
+      positions[sorted[i]] = { x: left + i * MIN_X, y }
+    }
+  }
+
+  for (let li = 0; li < layerNums.length; li++) {
+    const l = layerNums[li]
+    const ids = byLayer.get(l)!
+    const y = l * (NODE_H + GAP_Y)
+
+    // Source-only layer (top layer of root, or orphan row): even spacing centered on 0
+    const isSourceLayer = ids.every((id) => (forwardParents.get(id) ?? []).length === 0)
+    if (isSourceLayer) {
+      placeEven(ids, y)
+      continue
+    }
+
+    // Barycenter of already-placed forward parents
+    const desired = new Map<string, number>()
+    for (const id of ids) {
+      const parents = (forwardParents.get(id) ?? []).filter((p) => positions[p])
+      if (parents.length > 0) {
+        const sum = parents.reduce((s, p) => s + positions[p].x, 0)
+        desired.set(id, sum / parents.length)
+      } else {
+        desired.set(id, 0)
+      }
+    }
+
+    ids.sort((a, b) => {
+      const da = desired.get(a)!
+      const db = desired.get(b)!
+      if (da !== db) return da - db
+      return a.localeCompare(b)
+    })
+
+    const xs = ids.map((id) => desired.get(id)!)
+
+    // Forward sweep: enforce min spacing left-to-right
+    for (let i = 1; i < xs.length; i++) {
+      if (xs[i] < xs[i - 1] + MIN_X) xs[i] = xs[i - 1] + MIN_X
+    }
+    // Backward sweep: pull each node toward its desired x where slack permits
+    for (let i = xs.length - 2; i >= 0; i--) {
+      const desX = desired.get(ids[i])!
+      const maxX = xs[i + 1] - MIN_X
+      const minX = i > 0 ? xs[i - 1] + MIN_X : -Infinity
+      let target = xs[i]
+      if (desX > target && desX <= maxX) target = desX
+      if (target > maxX) target = maxX
+      if (target < minX) target = minX
+      xs[i] = target
+    }
 
     for (let i = 0; i < ids.length; i++) {
-      positions[ids[i]] = {
-        x: startX + i * (NODE_W + GAP_X) - NODE_W / 2,
-        y: layer * (NODE_H + GAP_Y),
-      }
+      positions[ids[i]] = { x: xs[i], y }
     }
   }
 
   return positions
 }
 
-/** Compute edges for SVG rendering */
+// ── Edge computation (unchanged API) ──
+
 export interface GraphEdge {
   from: string
   to: string
